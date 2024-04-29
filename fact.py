@@ -72,7 +72,6 @@ if __name__ == '__main__':
 
     # compute amount of data to use
     num_data, data_cost = agent_contribution(used_cost, offset=1)
-    print(used_cost)
     print('rank: %d, local optimal data: %d, reported marginal cost %.3E' % (rank, num_data, used_cost))
 
     # in order to partition data without overlap, share the amount of data each device will use
@@ -138,8 +137,8 @@ if __name__ == '__main__':
 
     # simulate the truthfulness mechanism
     agent_net_loss = loss_local - loss_fed
-    net_losses = np.empty(size, dtype=np.int32)
-    comm.Allgather(np.array([agent_net_loss], dtype=np.int32), net_losses)
+    net_losses = np.empty(size, dtype=np.float64)
+    comm.Allgather(np.array([agent_net_loss], dtype=np.float64), net_losses)
     average_other_agent_loss = (np.sum(net_losses) - agent_net_loss) / (size - 1)
 
     if rank == 0:
