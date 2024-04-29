@@ -34,6 +34,7 @@ class Recorder(object):
         self.record_test_acc = list()
         self.record_test_loss = list()
         self.marginal_costs = list()
+        self.benefits = list()
         self.saveFolderName = config['file_path'] + '/' + name + '-' + dataset + '-' + str(size) + 'devices'
 
         if rank == 0:
@@ -123,8 +124,14 @@ class Recorder(object):
             np.savetxt(self.saveFolderName + '/r' + str(self.rank) + '-fed-train-acc-top1.log',
                        self.record_training_acc_f, delimiter=',')
 
-    def save_costs(self, true_cost, reported_cost):
+    def save_costs(self, true_cost):
         self.marginal_costs.append(true_cost)
-        self.marginal_costs.append(reported_cost)
         np.savetxt(self.saveFolderName + '/r' + str(self.rank) + '-marginal-costs.log', self.marginal_costs,
                    delimiter=',')
+
+    def save_benefits(self, agent_benefit, other_benefit, expected_benefit, mean_epsilon_benefit):
+        self.benefits.append(agent_benefit)
+        self.benefits.append(other_benefit)
+        self.benefits.append(expected_benefit)
+        np.savetxt(self.saveFolderName + '/r' + str(self.rank) + '-benefits.log', self.benefits, delimiter=',')
+        np.save(self.saveFolderName + '/r' + str(self.rank) + '-expected-epsilon-benefit', mean_epsilon_benefit)

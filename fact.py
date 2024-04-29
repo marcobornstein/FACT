@@ -9,7 +9,7 @@ from utils.communicator import Communicator
 from utils.loader import load_cifar10, load_mnist
 from utils.recorder import Recorder
 from utils.models import MNIST
-from utils.truthfulness import agent_contribution, agent_gain_inflation, agent_gain_truth
+from utils.truthfulness import agent_contribution, truthfulness_mechanism
 
 
 if __name__ == '__main__':
@@ -35,6 +35,8 @@ if __name__ == '__main__':
     uniform_cost = config['uniform_cost']
     non_iid = config['non_iid']
     alpha = config['dirichlet_value']
+    sandwich = config['sandwich']
+    random_mech = config['random_mechanism']
     seed = config['random_seed']
     name = config['name']
 
@@ -65,14 +67,11 @@ if __name__ == '__main__':
     recorder = Recorder(rank, size, config, name, dataset)
 
     # keep note of true and reported marginal costs
-    used_cost = marginal_cost if uniform_cost else marginal_cost * 0.9  # np.random.normal(marginal_cost, marginal_cost / 10)
-    recorder.save_costs(marginal_cost, used_cost)
-    # marginal_cost = 1 / int(num_train_data / size) ** 2
-    # print(marginal_cost)
+    recorder.save_costs(marginal_cost)
 
     # compute amount of data to use
-    num_data, data_cost = agent_contribution(used_cost, offset=1)
-    print('rank: %d, local optimal data: %d, reported marginal cost %.3E' % (rank, num_data, used_cost))
+    num_data, data_cost = agent_contribution(marginal_cost, offset=1)
+    print('rank: %d, local optimal data: %d, reported marginal cost %.3E' % (rank, num_data, marginal_cost))
 
     # in order to partition data without overlap, share the amount of data each device will use
     all_data = np.empty(size, dtype=np.int32)
@@ -140,13 +139,16 @@ if __name__ == '__main__':
     net_losses = np.empty(size, dtype=np.float64)
     comm.Allgather(np.array([agent_net_loss], dtype=np.float64), net_losses)
     average_other_agent_loss = (np.sum(net_losses) - agent_net_loss) / (size - 1)
+    agent_net_benefit = truthfulness_mechanism(marginal_cost, num_data, agent_net_loss, average_other_agent_loss,
+                                               agents=1000, rounds=100000, h=81, random=random_mech, sandwich=sandwich)
+    mean_anb = np.mean(agent_net_benefit, axis=0)
+    min_idx = np.argmin(mean_anb)
+    avg_benefit = mean_anb[min_idx]
+    recorder.save_benefits(agent_net_loss, average_other_agent_loss, avg_benefit, mean_anb)
 
     if rank == 0:
-
+        epsilons = np.linspace(-0.2, 0.2, 81, endpoint=True)
         print(agent_net_loss)
         print(average_other_agent_loss)
-
-        agent_net_benefit = agent_gain_truth(marginal_cost, used_cost, num_data, agent_net_loss,
-                                             average_other_agent_loss, agents=1000, random=False)
-
         print(agent_net_benefit)
+        print(epsilons[min_idx])
