@@ -14,14 +14,11 @@ def agent_loss(num_data, cost, offset=1):
 def sandwich_game(random, reported_cost, random_costs):
     if random:
         baseline_costs = np.sort(np.random.choice(random_costs, 2, replace=False))
-        # print(baseline_costs)
         baseline_cost_l = baseline_costs[0]
         baseline_cost_h = baseline_costs[1]
     else:
         baseline_cost_l = np.quantile(random_costs, 1 / 3)
         baseline_cost_h = np.quantile(random_costs, 2 / 3)
-
-        # print(np.array([baseline_cost_l, baseline_cost_h]))
 
     lower_boolean = baseline_cost_l < reported_cost
     upper_boolean = baseline_cost_h > reported_cost

@@ -145,10 +145,3 @@ if __name__ == '__main__':
     min_idx = np.argmin(mean_anb)
     avg_benefit = mean_anb[min_idx]
     recorder.save_benefits(agent_net_loss, average_other_agent_loss, avg_benefit, mean_anb)
-
-    if rank == 0:
-        epsilons = np.linspace(-0.2, 0.2, 81, endpoint=True)
-        print(agent_net_loss)
-        print(average_other_agent_loss)
-        print(agent_net_benefit)
-        print(epsilons[min_idx])
