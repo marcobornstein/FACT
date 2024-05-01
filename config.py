@@ -4,7 +4,7 @@ configs = {
         'train_bs': 128,
         'test_bs': 512,
         'lr': 0.05,
-        'marginal_cost': 4e-5,
+        'marginal_cost': 1.024e-07,
         'local_steps': 6,
         'random_seed': 1,
         'test_frequency': 500,
@@ -14,10 +14,10 @@ configs = {
         'sandwich': True,
         'random_mechanism': True,
         'file_path': 'output',
-        'non_iid': False,
+        'non_iid': True,
         'dirichlet_value': 0.3,
         'uniform_cost': True,
-        'name': 'fact'
+        'name': 'fact-random-sandwich-uniform-cost-noniid-0.3-run1'
     },
 
     'mnist': {
@@ -25,7 +25,7 @@ configs = {
             'train_bs': 128,
             'test_bs': 1024,
             'lr': 5e-4,
-            'marginal_cost': 1e-8,
+            'marginal_cost': 7.11111111111e-08,
             'local_steps': 6,
             'random_seed': 1,
             'log_frequency': 30,
@@ -34,9 +34,9 @@ configs = {
             'sandwich': True,
             'random_mechanism': True,
             'file_path': 'output',
-            'non_iid': False,
+            'non_iid': True,
             'dirichlet_value': 0.3,
             'uniform_cost': True,
-            'name': 'fact'
+            'name': 'fact-random-sandwich-uniform-cost-noniid-0.3-run1'
         }
 }
