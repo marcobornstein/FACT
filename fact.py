@@ -134,6 +134,8 @@ if __name__ == '__main__':
 
     MPI.COMM_WORLD.Barrier()
 
+    # TODO: Maybe save all at once for random & deterministic mechanisms?
+
     # simulate the truthfulness mechanism
     agent_net_loss = loss_local - loss_fed
     net_losses = np.empty(size, dtype=np.float64)

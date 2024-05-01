@@ -13,19 +13,8 @@ class Postprocessing:
 
         for j, data_path in enumerate(data_paths):
 
-            # ensure data files exist
-            test_file = data_path + '/r0-fed-epoch-loss.log'
-            if not os.path.isfile(test_file):
-                raise Exception(f"Incorrect Path Provided")
-
-            # determine which dataset and which truthfulness method
-            method = 'Random Mechanism' if data_path.lower().find('random') > -1 else 'Deterministic Mechanism'
-            dataset = 'MNIST' if data_path.lower().find('mnist') > -1 else 'Cifar10'
-
-            # extract all runs
-            split_paths = data_path.split("-run")
-            begin_path = split_paths[0]
-            end_path = split_paths[1][1:]
+            # check file existence
+            method, dataset, begin_path, end_path = self.path_check(data_path)
 
             # extract benefit data
             manb = []
@@ -49,13 +38,62 @@ class Postprocessing:
         plt.legend(loc='best')
         plt.xlim([-20, 20])
         plt.grid(alpha=0.25)
+
+        # save figure
         if save_file is None:
             plt.show()
         else:
             save_file = save_file + '-' + str(num_agents) +'agents-' + dataset.lower() + '.jpg'
             plt.savefig(save_file, dpi=200)
 
-        return manb, losses
+    def run_loss_plot(self, data_path, save_file=None, loss=True, runs=3):
+
+        # loss or accuracy
+        dt = 'loss.log' if loss else 'acc-top1.log'
+
+        # check file existence
+        _, dataset, begin_path, end_path = self.path_check(data_path)
+
+        # extract benefit data
+        losses_fed = []
+        losses_local = []
+        for run in range(1, runs+1):
+            file = begin_path + '-run' + str(run) + end_path
+            loss_data_local, _, _ = self.get_epoch_data(file, datatype='local-epoch-' + dt)
+            loss_data_fed, epochs, num_agents = self.get_epoch_data(file, datatype='fed-epoch-' + dt)
+            losses_fed.append(loss_data_fed[:, 0])
+            losses_local.append(np.mean(loss_data_local, axis=1))
+
+        losses_fed = np.stack(losses_fed, axis=0)
+        losses_local = np.stack(losses_local, axis=0)
+
+        # compute error bars over all three runs
+        y_mean_local, y_min_local, y_max_local = self.generate_confidence_interval(losses_local)
+        y_mean_fed, y_min_fed, y_max_fed = self.generate_confidence_interval(losses_fed)
+
+        # plot results
+        plt.figure(figsize=(8, 6))
+
+        # local
+        plt.plot(range(epochs), y_mean_local, color='r', label='Local Training')
+        plt.fill_between(range(epochs), y_min_local, y_max_local, alpha=0.2, color='r')
+
+        # fed
+        plt.plot(range(epochs), y_mean_fed, color='b', label='Federated Training')
+        plt.fill_between(range(epochs), y_min_fed, y_max_fed, alpha=0.2, color='b')
+
+        plt.xlabel('Epochs')
+        plt.ylabel('Test Loss')
+        plt.legend(loc='best')
+        plt.yscale("log")
+        plt.grid(alpha=0.25)
+
+        # save figure
+        if save_file is None:
+            plt.show()
+        else:
+            save_file = save_file + '-' + str(num_agents) +'agents-' + dataset.lower() + '.jpg'
+            plt.savefig(save_file, dpi=200)
 
     def get_epoch_data(self, data_path, datatype='fed-epoch-loss.log'):
 
@@ -67,7 +105,7 @@ class Postprocessing:
         with open(data_path + '/r0-fed-epoch-loss.log') as f:
             epochs = sum(1 for _ in f)
 
-        return self.unpack_data(data_path, epochs, num_agents, datatype)
+        return self.unpack_data(data_path, epochs, num_agents, datatype), epochs, num_agents
 
     def get_benefit_data(self, data_path):
 
@@ -106,6 +144,25 @@ class Postprocessing:
         return
 
     @staticmethod
+    def path_check(data_path):
+
+        # ensure data files exist
+        test_file = data_path + '/r0-fed-epoch-loss.log'
+        if not os.path.isfile(test_file):
+            raise Exception(f"Incorrect Path Provided")
+
+        # determine which dataset and which truthfulness method
+        method = 'Random Mechanism' if data_path.lower().find('random') > -1 else 'Deterministic Mechanism'
+        dataset = 'MNIST' if data_path.lower().find('mnist') > -1 else 'Cifar10'
+
+        # extract all runs
+        split_paths = data_path.split("-run")
+        begin_path = split_paths[0]
+        end_path = split_paths[1][1:]
+
+        return method, dataset, begin_path, end_path
+
+    @staticmethod
     def unpack_data(directory_path, epochs, num_workers, datatype):
         directory = os.path.join(directory_path)
         if not os.path.isdir(directory):
@@ -136,10 +193,18 @@ if __name__ == '__main__':
     mnist_random_path = 'output/MNIST/fact-random-sandwich-uniform-cost-run1-mnist-16devices'
     mnist_deterministic_path = 'output/MNIST/fact-deterministic-sandwich-uniform-cost-run1-mnist-16devices'
 
+    # multiple paths
+    mnist_paths = [mnist_random_path, mnist_deterministic_path]
+    cifar_paths = [cifar10_random_path, cifar10_deterministic_path]
+
     # initialize postprocessing
     pp = Postprocessing()
 
-    # plot results
-    mnist_paths = [mnist_random_path, mnist_deterministic_path]
-    cifar_paths = [cifar10_random_path, cifar10_deterministic_path]
-    manb, losses = pp.run_benefit_plot(mnist_paths, save_file='sandwich')
+    '''
+    # plot results (benefit)
+    pp.run_benefit_plot(mnist_paths, save_file='sandwich')
+    '''
+
+    pp.run_loss_plot(cifar10_random_path)
+
+

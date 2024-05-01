@@ -12,7 +12,7 @@ configs = {
         'test_batches': 30,
         'epochs': 100,
         'sandwich': True,
-        'random_mechanism': True,
+        'random_mechanism': False,
         'file_path': 'output',
         'non_iid': True,
         'dirichlet_value': 0.3,
