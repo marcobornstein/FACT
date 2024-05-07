@@ -41,15 +41,15 @@ if __name__ == '__main__':
     seed = config['random_seed']
     name = config['name']
 
-    # set random seed
-    torch.manual_seed(seed)
-    np.random.seed(seed)
-    random.seed(seed)
-
     # initialize MPI
     comm = MPI.COMM_WORLD
     rank = comm.Get_rank()
     size = comm.Get_size()
+
+    # set random seed
+    torch.manual_seed(seed + rank)
+    np.random.seed(seed + rank)
+    random.seed(seed + rank)
 
     # determine torch device available (default to GPU if available)
     if torch.cuda.is_available():
