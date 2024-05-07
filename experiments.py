@@ -85,7 +85,12 @@ class Postprocessing:
         plt.xlabel('Epochs')
         plt.ylabel('Test Loss')
         plt.legend(loc='best')
-        plt.yscale("log")
+        if dataset.lower() == 'mnist':
+            plt.ylim([0.01, 2.5])
+            plt.yscale("log")
+        else:
+            plt.ylim([0, 1.25 * 10**2])
+            plt.yscale("symlog")
         plt.grid(alpha=0.25)
 
         # save figure
@@ -149,6 +154,7 @@ class Postprocessing:
         # ensure data files exist
         test_file = data_path + '/r0-fed-epoch-loss.log'
         if not os.path.isfile(test_file):
+            print(test_file)
             raise Exception(f"Incorrect Path Provided")
 
         # determine which dataset and which truthfulness method
@@ -188,23 +194,40 @@ class Postprocessing:
 
 if __name__ == '__main__':
 
-    cifar10_random_path = 'output/CIFAR10/fact-random-sandwich-uniform-cost-run1-cifar10-16devices'
-    cifar10_deterministic_path = 'output/CIFAR10/fact-deterministic-sandwich-uniform-cost-run1-cifar10-16devices'
-    mnist_random_path = 'output/MNIST/fact-random-sandwich-uniform-cost-run1-mnist-16devices'
-    mnist_deterministic_path = 'output/MNIST/fact-deterministic-sandwich-uniform-cost-run1-mnist-16devices'
+    # iid
+    cifar10_random_path_iid = 'output/CIFAR10/fact-random-sandwich-uniform-cost-run1-cifar10-16devices'
+    cifar10_deterministic_path_iid = 'output/CIFAR10/fact-deterministic-sandwich-uniform-cost-run1-cifar10-16devices'
+    mnist_random_path_iid = 'output/MNIST/fact-random-sandwich-uniform-cost-run1-mnist-16devices'
+    mnist_deterministic_path_iid = 'output/MNIST/fact-deterministic-sandwich-uniform-cost-run1-mnist-16devices'
+
+    # noniid D-0.3
+    cifar10_random_path_noniid3 = 'output/CIFAR10/fact-random-sandwich-uniform-cost-noniid-0.3-run1-cifar10-16devices'
+    cifar10_deterministic_path_noniid3 = 'output/CIFAR10/fact-deterministic-sandwich-uniform-cost-noniid-0.3-run1-cifar10-16devices'
+    mnist_random_path_noniid3 = 'output/MNIST/fact-random-sandwich-uniform-cost-noniid-0.3-run1-mnist-16devices'
+    mnist_deterministic_path_noniid3 = 'output/MNIST/fact-deterministic-sandwich-uniform-cost-noniid-0.3-run1-mnist-16devices'
+
+    # noniid D-0.6
+    cifar10_random_path_noniid6 = 'output/CIFAR10/fact-random-sandwich-uniform-cost-noniid-0.6-run1-cifar10-16devices'
+    cifar10_deterministic_path_noniid6 = 'output/CIFAR10/fact-deterministic-sandwich-uniform-cost-noniid-0.6-run1-cifar10-16devices'
+    mnist_random_path_noniid6 = 'output/MNIST/fact-random-sandwich-uniform-cost-noniid-0.6-run1-mnist-16devices'
+    mnist_deterministic_path_noniid6 = 'output/MNIST/fact-deterministic-sandwich-uniform-cost-noniid-0.6-run1-mnist-16devices'
 
     # multiple paths
-    mnist_paths = [mnist_random_path, mnist_deterministic_path]
-    cifar_paths = [cifar10_random_path, cifar10_deterministic_path]
+    mnist_paths_iid = [mnist_random_path_iid, mnist_deterministic_path_iid]
+    cifar_paths_iid = [cifar10_random_path_iid, cifar10_deterministic_path_iid]
+    mnist_paths_noniid3 = [mnist_random_path_noniid3, mnist_deterministic_path_noniid3]
+    cifar_paths_noniid3 = [cifar10_random_path_noniid3, cifar10_deterministic_path_noniid3]
+    mnist_paths_noniid6 = [mnist_random_path_noniid6, mnist_deterministic_path_noniid6]
+    cifar_paths_noniid6 = [cifar10_random_path_noniid6, cifar10_deterministic_path_noniid6]
 
     # initialize postprocessing
     pp = Postprocessing()
 
-    '''
+    # '''
     # plot results (benefit)
-    pp.run_benefit_plot(mnist_paths, save_file='sandwich')
-    '''
+    # pp.run_benefit_plot(cifar_paths_iid, save_file='sandwich-iid')
+    # '''
 
-    pp.run_loss_plot(cifar10_random_path)
+    pp.run_loss_plot(cifar10_random_path_noniid6, save_file='noniid6-2')
 
 
