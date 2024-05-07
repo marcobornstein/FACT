@@ -1,5 +1,6 @@
 import torch
 import numpy as np
+import random
 import torchvision.models as models
 import argparse
 from config import configs
@@ -45,9 +46,10 @@ if __name__ == '__main__':
     rank = comm.Get_rank()
     size = comm.Get_size()
 
-    # set seed for reproducibility
+    # set random seed
     torch.manual_seed(seed+rank)
     np.random.seed(seed+rank)
+    random.seed(seed+rank)
 
     # determine torch device available (default to GPU if available)
     if torch.cuda.is_available():
@@ -79,7 +81,9 @@ if __name__ == '__main__':
     self_weight = num_data / np.sum(all_data)
     FLC.self_weight = self_weight
 
-    # load CIFAR10 data
+    # load data
+    if rank == 0:
+        print('Loading Data...')
     if dataset == 'cifar10':
         trainloader, testloader = load_cifar10(all_data, rank, size, train_batch_size, test_batch_size, non_iid, alpha)
         model = models.resnet18()
@@ -92,6 +96,7 @@ if __name__ == '__main__':
         model = MNIST()
         optimizer = torch.optim.Adam(model.parameters(), lr=learning_rate)
         scheduler = None
+        print('hi')
     else:
         print('ERROR: Dataset Provided Is Not Valid.')
         exit()
