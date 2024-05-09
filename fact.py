@@ -1,5 +1,6 @@
 import torch
 import numpy as np
+import random
 import torchvision.models as models
 import argparse
 from config import configs
@@ -9,7 +10,7 @@ from utils.communicator import Communicator
 from utils.loader import load_cifar10, load_mnist
 from utils.recorder import Recorder
 from utils.models import MNIST
-from utils.truthfulness import agent_contribution, agent_gain_inflation, agent_gain_truth
+from utils.truthfulness import agent_contribution, truthfulness_mechanism
 
 
 if __name__ == '__main__':
@@ -35,6 +36,8 @@ if __name__ == '__main__':
     uniform_cost = config['uniform_cost']
     non_iid = config['non_iid']
     alpha = config['dirichlet_value']
+    sandwich = config['sandwich']
+    random_mech = config['random_mechanism']
     seed = config['random_seed']
     name = config['name']
 
@@ -43,9 +46,10 @@ if __name__ == '__main__':
     rank = comm.Get_rank()
     size = comm.Get_size()
 
-    # set seed for reproducibility
-    torch.manual_seed(seed+rank)
-    np.random.seed(seed+rank)
+    # set random seed
+    torch.manual_seed(seed + rank)
+    np.random.seed(seed + rank)
+    random.seed(seed + rank)
 
     # determine torch device available (default to GPU if available)
     if torch.cuda.is_available():
@@ -65,14 +69,11 @@ if __name__ == '__main__':
     recorder = Recorder(rank, size, config, name, dataset)
 
     # keep note of true and reported marginal costs
-    used_cost = marginal_cost if uniform_cost else marginal_cost * 0.9  # np.random.normal(marginal_cost, marginal_cost / 10)
-    recorder.save_costs(marginal_cost, used_cost)
-    # marginal_cost = 1 / int(num_train_data / size) ** 2
-    # print(marginal_cost)
+    recorder.save_costs(marginal_cost)
 
     # compute amount of data to use
-    num_data, data_cost = agent_contribution(used_cost, offset=1)
-    print('rank: %d, local optimal data: %d, reported marginal cost %.3E' % (rank, num_data, used_cost))
+    num_data, data_cost = agent_contribution(marginal_cost, offset=1)
+    print('rank: %d, local optimal data: %d, reported marginal cost %.3E' % (rank, num_data, marginal_cost))
 
     # in order to partition data without overlap, share the amount of data each device will use
     all_data = np.empty(size, dtype=np.int32)
@@ -80,7 +81,9 @@ if __name__ == '__main__':
     self_weight = num_data / np.sum(all_data)
     FLC.self_weight = self_weight
 
-    # load CIFAR10 data
+    # load data
+    if rank == 0:
+        print('Loading Data...')
     if dataset == 'cifar10':
         trainloader, testloader = load_cifar10(all_data, rank, size, train_batch_size, test_batch_size, non_iid, alpha)
         model = models.resnet18()
@@ -135,18 +138,15 @@ if __name__ == '__main__':
 
     MPI.COMM_WORLD.Barrier()
 
+    # TODO: Maybe save all at once for random & deterministic mechanisms?
+
     # simulate the truthfulness mechanism
     agent_net_loss = loss_local - loss_fed
     net_losses = np.empty(size, dtype=np.float64)
     comm.Allgather(np.array([agent_net_loss], dtype=np.float64), net_losses)
     average_other_agent_loss = (np.sum(net_losses) - agent_net_loss) / (size - 1)
-
-    if rank == 0:
-
-        print(agent_net_loss)
-        print(average_other_agent_loss)
-
-        agent_net_benefit = agent_gain_truth(marginal_cost, used_cost, num_data, agent_net_loss,
-                                             average_other_agent_loss, agents=1000, random=False)
-
-        print(agent_net_benefit)
+    fact_loss, avg_benefit_random, avg_benefit_det = truthfulness_mechanism(marginal_cost, num_data, agent_net_loss,
+                                                                            average_other_agent_loss, size, agents=1000,
+                                                                            rounds=100000, h=81, normal=True,
+                                                                            sandwich=sandwich)
+    recorder.save_benefits(agent_net_loss, average_other_agent_loss, fact_loss, avg_benefit_random, avg_benefit_det)
