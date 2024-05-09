@@ -9,6 +9,52 @@ class Postprocessing:
     def __init__(self):
         self.colors = ['r', 'b', 'g', 'orange', 'pink', 'cyan', 'yellow', 'purple']
 
+    def get_lambda(self, data_path, alpha, num_agents, offset=2):
+
+        # check file existence
+        _, dataset, begin_path, end_path = self.path_check(data_path)
+        num_data = 3125 if dataset.lower() == 'cifar10' else 3750
+        total_data = num_data * num_agents
+        file = begin_path + '-run1' + end_path
+        agent_mcs = self.unpack_data(file, 1, num_agents, datatype='costs.log').flatten()
+        mc = agent_mcs[0]
+        lambda_coefficient = (1 / ((2 - alpha) * offset)) * num_data * total_data / (total_data - num_data)
+        lamb = lambda_coefficient * np.square(mc - offset / (2 * np.square(total_data)))
+
+        return lamb, mc, num_data, total_data, dataset
+
+    def penalty(self, data_path, alpha=2, offset=2, num_agents=16, h=201, save_file=None):
+
+        # get lambda
+        alpha -= 1e-6
+        lamb, mc, num_data, total_data, dataset = self.get_lambda(data_path, alpha, num_agents, offset=offset)
+
+        # initialize eps
+        vary_data = np.linspace(num_data - 500, num_data + 500, h, endpoint=True)
+        true_m = int(np.sqrt(offset / (2 * mc)))
+
+        # compute penalty
+        penalties = lamb * np.square(mc / (2 * lamb) - offset / (4 * lamb * np.square(total_data)) + true_m - vary_data)
+        penalties_plus_cost = penalties + vary_data * mc
+
+        # plot truthfulness
+        plt.figure(figsize=(8, 6))
+        plt.plot(vary_data, penalties_plus_cost, color='tab:red')
+        plt.plot(true_m, penalties[np.argwhere(vary_data == true_m)[0]], 'h', color='tab:blue', markersize=8,
+                 label='True Optimal Contribution')
+        plt.xlabel('Data Contributed $m_i$')
+        plt.ylabel('Free-Riding Penalty + Data Costs')
+        plt.legend(loc='best')
+        plt.xticks(vary_data[::50])
+        plt.grid(alpha=0.25)
+
+        # save figure
+        if save_file is None:
+            plt.show()
+        else:
+            sf = save_file + '-truthfulness-' + str(num_agents) + 'agents-' + dataset.lower() + '.jpg'
+            plt.savefig(sf, dpi=200)
+
     def run_loss_histogram(self, data_path, save_file=None, loss=True, runs=3, h=121):
 
         # loss or accuracy
@@ -16,12 +62,17 @@ class Postprocessing:
 
         # check file existence
         _, dataset, begin_path, end_path = self.path_check(data_path)
-        num_data = 3125 if dataset == 'cfiar10' else 3750
+        num_data = 3125 if dataset.lower() == 'cifar10' else 3750
 
         y_mean_local, _, _, y_mean_fed, _, _, epochs, num_agents = self.get_loss_data(begin_path, end_path, runs, dt)
         avg_local_loss = y_mean_local[-1]
         avg_fed_loss = y_mean_fed[-1]
         net_loss = avg_local_loss - avg_fed_loss
+
+        # get penalty term for free-riding (this is minimal because no free-riding at optimal ~ only tiny value)
+        alpha = 2 - 1e-6
+        lamb, mc, _, total_data, _ = self.get_lambda(data_path, alpha, num_agents, offset=2)
+        penalty = lamb * np.square(mc / (2 * lamb) - 2 / (4 * lamb * np.square(total_data)))
 
         # get average benefit from participating in FACT
         agent_net = np.empty((runs, num_agents))
@@ -32,12 +83,9 @@ class Postprocessing:
             agent_net[run - 1, :] = fact_benefit[0, :]
             other_agent_net[run - 1, :] = fact_benefit[1, :]
 
+        # get truthfulness data
         avg_agent_net = np.mean(agent_net, axis=0)
         avg_other_agent_net = np.mean(other_agent_net, axis=0)
-
-        mcs = self.unpack_data(file, 1, num_agents, datatype='costs.log').flatten()
-        mc = mcs[0]
-
         fbr = np.empty((num_agents, h))
         fbd = np.empty((num_agents, h))
         fl = np.empty(num_agents)
@@ -46,10 +94,9 @@ class Postprocessing:
                                                                  num_agents, h=h, sandwich=True, normal=True,
                                                                  agents=2000, rounds=100000)
 
-        avg_fbr = np.mean(fbr, axis=0)
-        avg_fbd = np.mean(fbd, axis=0)
-
-        fact_loss = np.mean(fl)
+        avg_fbr = np.mean(fbr, axis=0) + penalty
+        avg_fbd = np.mean(fbd, axis=0) + penalty
+        fact_loss = np.mean(fl) + penalty
 
         # initialize eps
         epsilons = np.linspace(-0.3, 0.3, h, endpoint=True) * 100
@@ -279,13 +326,15 @@ if __name__ == '__main__':
     # pp.run_loss_plot(cifar10_random_path_noniid6, save_file='noniid6-2')
 
     # loss histogram and truthfulness plots
-    # pp.run_loss_histogram(mnist_random_path_iid, save_file='iid')
-    # pp.run_loss_histogram(mnist_random_path_noniid6, save_file='noniid6')
-    # pp.run_loss_histogram(mnist_random_path_noniid3, save_file='noniid3')
+    pp.run_loss_histogram(cifar10_random_path_iid, save_file='iid')
+    pp.run_loss_histogram(cifar10_random_path_noniid6, save_file='noniid6')
+    pp.run_loss_histogram(cifar10_random_path_noniid3, save_file='noniid3')
 
     # penalty for using sub-optimal data contributions
 
     # initialize lambda -- add into the loss computations
     # compute how penalty increases with a very large lambda
+
+    # pp.penalty(mnist_random_path_noniid3, save_file='penalty')
 
 

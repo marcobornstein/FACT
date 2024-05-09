@@ -1,14 +1,14 @@
 import numpy as np
 
 
-def agent_contribution(cost, offset=1):
-    optimal_data = int(np.sqrt(offset / cost))
+def agent_contribution(cost, offset=2):
+    optimal_data = int(np.sqrt(offset / (2 * cost)))
     data_cost = cost * optimal_data
     return optimal_data, data_cost
 
 
-def agent_loss(num_data, cost, offset=1):
-    return (offset / num_data) + (num_data * cost)
+def agent_loss(num_data, cost, offset=2):
+    return (offset / (2 * num_data)) + (num_data * cost)
 
 
 def sandwich_game(reported_cost, random_costs, baseline_costs=None):
