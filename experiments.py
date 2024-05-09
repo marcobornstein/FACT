@@ -44,8 +44,9 @@ class Postprocessing:
                  label='True Optimal Contribution')
         plt.xlabel('Data Contributed $m_i$')
         plt.ylabel('Free-Riding Penalty + Data Costs')
-        plt.legend(loc='best')
+        plt.legend(loc='lower left')
         plt.xticks(vary_data[::50])
+        plt.xlim([num_data - 500, num_data + 500])
         plt.grid(alpha=0.25)
 
         # save figure
@@ -326,15 +327,15 @@ if __name__ == '__main__':
     # pp.run_loss_plot(cifar10_random_path_noniid6, save_file='noniid6-2')
 
     # loss histogram and truthfulness plots
-    pp.run_loss_histogram(cifar10_random_path_iid, save_file='iid')
-    pp.run_loss_histogram(cifar10_random_path_noniid6, save_file='noniid6')
-    pp.run_loss_histogram(cifar10_random_path_noniid3, save_file='noniid3')
+    # pp.run_loss_histogram(cifar10_random_path_iid, save_file='iid')
+    # pp.run_loss_histogram(cifar10_random_path_noniid6, save_file='noniid6')
+    # pp.run_loss_histogram(cifar10_random_path_noniid3, save_file='noniid3')
 
     # penalty for using sub-optimal data contributions
 
     # initialize lambda -- add into the loss computations
     # compute how penalty increases with a very large lambda
 
-    # pp.penalty(mnist_random_path_noniid3, save_file='penalty')
+    pp.penalty(cifar10_random_path_noniid3, save_file='penalty')
 
 
