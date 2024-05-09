@@ -145,9 +145,8 @@ if __name__ == '__main__':
     net_losses = np.empty(size, dtype=np.float64)
     comm.Allgather(np.array([agent_net_loss], dtype=np.float64), net_losses)
     average_other_agent_loss = (np.sum(net_losses) - agent_net_loss) / (size - 1)
-    agent_net_benefit = truthfulness_mechanism(marginal_cost, num_data, agent_net_loss, average_other_agent_loss,
-                                               agents=1000, rounds=100000, h=81, random=random_mech, sandwich=sandwich)
-    mean_anb = np.mean(agent_net_benefit, axis=0)
-    min_idx = np.argmin(mean_anb)
-    avg_benefit = mean_anb[min_idx]
-    recorder.save_benefits(agent_net_loss, average_other_agent_loss, avg_benefit, mean_anb)
+    fact_loss, avg_benefit_random, avg_benefit_det = truthfulness_mechanism(marginal_cost, num_data, agent_net_loss,
+                                                                            average_other_agent_loss, size, agents=1000,
+                                                                            rounds=100000, h=81, normal=True,
+                                                                            sandwich=sandwich)
+    recorder.save_benefits(agent_net_loss, average_other_agent_loss, fact_loss, avg_benefit_random, avg_benefit_det)
