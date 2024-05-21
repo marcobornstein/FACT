@@ -71,7 +71,6 @@ class Postprocessing:
         plt.figure(1, figsize=(8, 6))
         plt.figure(2, figsize=(8, 6))
 
-
         for v, data_path in enumerate(data_paths):
 
             # check file existence
@@ -112,22 +111,20 @@ class Postprocessing:
             plt.figure(1)
             plt.plot(epsilons, net_loss - avg_fbr, self.colors[0], label=label_add[v], linestyle=ls[v])
 
-        for i in range(1, 3):
-            plt.figure(i)
-            plt.xlabel('Percent (%) Added/Subtracted from True Cost $c_i$', fontsize=20, weight='bold')
-            plt.ylabel('Net Improvement in Loss', fontsize=20, weight='bold')
-            plt.legend(loc='upper left', fontsize=15)
-            # plt.legend(loc='upper right', fontsize=15)
-            plt.xlim([-30, 30])
-            plt.tick_params(axis='both', which='major', labelsize=15)
-            plt.grid(alpha=0.25)
+        plt.xlabel('Percent (%) Added/Subtracted from True Cost $c_i$', fontsize=20, weight='bold')
+        plt.ylabel('Net Improvement in Loss', fontsize=20, weight='bold')
+        plt.legend(loc='upper left', fontsize=15)
+        # plt.legend(loc='upper right', fontsize=15)
+        plt.xlim([-30, 30])
+        plt.tick_params(axis='both', which='major', labelsize=15)
+        plt.grid(alpha=0.25)
 
-            # save figure
-            if save_file is None:
-                plt.show()
-            else:
-                sf = save_file + '-' + str(i) + '-truthfulness-' + str(num_agents) + 'agents-' + dataset.lower() + '.jpg'
-                plt.savefig(sf, dpi=200)
+        # save figure
+        if save_file is None:
+            plt.show()
+        else:
+            sf = save_file + '-truthfulness-' + str(num_agents) + 'agents-' + dataset.lower() + '.jpg'
+            plt.savefig(sf, dpi=200)
 
     def run_loss_histogram(self, data_path, save_file=None, loss=True, runs=3, h=121):
 
@@ -227,7 +224,7 @@ class Postprocessing:
         if save_file is None:
             plt.show()
         else:
-            save_file = save_file + '-' + str(num_agents) +'agents-' + dataset.lower() + '.jpg'
+            save_file = save_file + '-' + str(num_agents) + 'agents-' + dataset.lower() + '.jpg'
             plt.savefig(save_file, dpi=200)
 
     def get_epoch_data(self, data_path, datatype='fed-epoch-loss.log'):
@@ -290,10 +287,10 @@ class Postprocessing:
         return np.array(means), np.array(mins), np.array(maxs)
 
     def plot_ci(self, x, y, num_runs, num_dots, mylegend, ls='-', lw=3, transparency=0.2):
-        assert(x.ndim == 1)
-        assert(x.size == num_dots)
-        assert(y.ndim == 2)
-        assert(y.shape == (num_runs, num_dots))
+        assert (x.ndim == 1)
+        assert (x.size == num_dots)
+        assert (y.ndim == 2)
+        assert (y.shape == (num_runs, num_dots))
         y_mean, y_min, y_max = self.generate_confidence_interval(y)
         plt.plot(x, y_mean, 'o-', label=mylegend, linestyle=ls, linewidth=lw)  # , label=r'$\alpha$={}'.format(alpha))
         plt.fill_between(x, y_min, y_max, alpha=transparency)
@@ -379,5 +376,3 @@ if __name__ == '__main__':
 
     # truthfulness plots
     pp.truthfulness_plots(combined_cifar, save_file='vary-dist')
-
-

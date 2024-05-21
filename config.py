@@ -28,7 +28,7 @@ configs = {
             'random_seed': 1,
             'log_frequency': 30,
             'test_batches': 30,
-            'epochs': 1, # 100,
+            'epochs': 100,
             'file_path': 'output',
             'non_iid': False,
             'dirichlet_value': 0.3,
