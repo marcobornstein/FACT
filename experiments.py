@@ -171,15 +171,16 @@ class Postprocessing:
         plt.bar(["Local Training", 'FACT Training', 'Traditional FL'],
                 [avg_local_loss, fact_loss+avg_fed_loss, avg_fed_loss],
                 color=['tab:red', 'tab:blue', 'tab:green'])
-        plt.ylabel('Loss', fontsize=20, weight='bold')
+        plt.ylabel('Loss', fontsize=25, weight='bold')
         plt.xticks(fontsize=17, weight='bold')
+        plt.yticks(fontsize=17, weight='bold')
         if dataset.lower() == 'cifar10':
             plt.ylim([0, 7])
         else:
             plt.ylim([0.001, 2])
             plt.yscale("log")
         plt.grid(alpha=0.25, axis='y')
-        plt.tick_params(axis='both', which='major', labelsize=15)
+        plt.tick_params(axis='both', which='major', labelsize=16)
         # save figure
         if save_file is None:
             plt.show()
@@ -211,6 +212,8 @@ class Postprocessing:
 
         plt.xlabel('Epochs', fontsize=20, weight='bold')
         plt.ylabel('Test Loss', fontsize=20, weight='bold')
+        plt.xticks(fontsize=17, weight='bold')
+        plt.yticks(fontsize=17, weight='bold')
         plt.legend(loc='best', fontsize=15)
         if dataset.lower() == 'mnist':
             plt.ylim([0.01, 2.5])
