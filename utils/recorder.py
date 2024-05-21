@@ -8,7 +8,6 @@ def date_string(date):
     return date.day * 1000000 + date.hour*10000 + date.minute*100 + date.second
 
 
-
 class Recorder(object):
     def __init__(self, rank, size, config, name, dataset):
         self.rank = rank

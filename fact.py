@@ -5,7 +5,7 @@ import torchvision.models as models
 import argparse
 from config import configs
 from mpi4py import MPI
-from train_test import local_training, federated_training, federated_training_nonuniform
+from train_test import local_training, federated_training
 from utils.communicator import Communicator
 from utils.loader import load_cifar10, load_mnist
 from utils.recorder import Recorder
@@ -137,8 +137,6 @@ if __name__ == '__main__':
                                   log_frequency, recorder, scheduler, local_steps=local_steps)
 
     MPI.COMM_WORLD.Barrier()
-
-    # TODO: Maybe save all at once for random & deterministic mechanisms?
 
     # simulate the truthfulness mechanism
     agent_net_loss = loss_local - loss_fed
