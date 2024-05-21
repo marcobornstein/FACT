@@ -11,13 +11,11 @@ configs = {
         'log_frequency': 60,
         'test_batches': 30,
         'epochs': 100,
-        'sandwich': True,
-        'random_mechanism': False,
         'file_path': 'output',
-        'non_iid': True,
+        'non_iid': False,
         'dirichlet_value': 0.3,
         'uniform_cost': True,
-        'name': 'fact-random-sandwich-uniform-cost-noniid-0.3-run1'
+        'name': 'fact-random-sandwich-uniform-cost-iid-run1'
     },
 
     'mnist': {
@@ -30,13 +28,11 @@ configs = {
             'random_seed': 1,
             'log_frequency': 30,
             'test_batches': 30,
-            'epochs': 100,
-            'sandwich': True,
-            'random_mechanism': True,
+            'epochs': 1, # 100,
             'file_path': 'output',
-            'non_iid': True,
+            'non_iid': False,
             'dirichlet_value': 0.3,
             'uniform_cost': True,
-            'name': 'fact-random-sandwich-uniform-cost-noniid-0.3-run1'
+            'name': 'fact-random-sandwich-uniform-cost-iid-run1'
         }
 }

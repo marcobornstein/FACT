@@ -101,21 +101,16 @@ class Postprocessing:
             avg_agent_net = np.mean(agent_net, axis=0)
             avg_other_agent_net = np.mean(other_agent_net, axis=0)
             fbr = np.empty((num_agents, h))
-            fbd = np.empty((num_agents, h))
             fl = np.empty(num_agents)
             for i in tqdm(range(num_agents)):
-                fl[i], fbr[i, :], fbd[i, :] = truthfulness_mechanism(mc, num_data, avg_agent_net[i],
-                                                                 avg_other_agent_net[i], num_agents, h=h,
-                                                                 sandwich=True, normal=True, agents=2000, rounds=100000)
+                fl[i], fbr[i, :] = truthfulness_mechanism(mc, num_data, avg_agent_net[i], avg_other_agent_net[i],
+                                                          num_agents, h=h, normal=True, agents=2000, rounds=100000)
 
             avg_fbr = np.mean(fbr, axis=0) + penalty
-            avg_fbd = np.mean(fbd, axis=0) + penalty
 
             # plot truthfulness
             plt.figure(1)
             plt.plot(epsilons, net_loss - avg_fbr, self.colors[0], label=label_add[v], linestyle=ls[v])
-            plt.figure(2)
-            plt.plot(epsilons, net_loss - avg_fbd, self.colors[1], label=label_add[v], linestyle=ls[v])
 
         for i in range(1, 3):
             plt.figure(i)
@@ -166,42 +161,12 @@ class Postprocessing:
         avg_agent_net = np.mean(agent_net, axis=0)
         avg_other_agent_net = np.mean(other_agent_net, axis=0)
         fbr = np.empty((num_agents, h))
-        fbd = np.empty((num_agents, h))
         fl = np.empty(num_agents)
         for i in tqdm(range(num_agents)):
-            fl[i], fbr[i, :], fbd[i, :] = truthfulness_mechanism(mc, num_data, avg_agent_net[i], avg_other_agent_net[i],
-                                                                 num_agents, h=h, sandwich=True, normal=True,
-                                                                 agents=2000, rounds=100000)
+            fl[i], fbr[i, :] = truthfulness_mechanism(mc, num_data, avg_agent_net[i], avg_other_agent_net[i],
+                                                      num_agents, h=h, normal=True, agents=2000, rounds=100000)
 
-        avg_fbr = np.mean(fbr, axis=0) + penalty
-        avg_fbd = np.mean(fbd, axis=0) + penalty
         fact_loss = np.mean(fl) + penalty
-
-        '''
-        # initialize eps
-        epsilons = np.linspace(-0.3, 0.3, h, endpoint=True) * 100
-
-        print(epsilons[np.argmin(avg_fbd)])
-        print(epsilons[np.argmin(avg_fbr)])
-
-        # plot truthfulness
-        plt.figure(figsize=(8, 6))
-        plt.plot(epsilons, net_loss - avg_fbr, self.colors[0], label='Random Mechanism')
-        plt.plot(epsilons, net_loss - avg_fbd, self.colors[1], label='Deterministic Mechanism')
-        plt.xlabel('Percent (%) Added/Subtracted from True Cost $c_i$')
-        plt.ylabel('Net Improvement in Loss')
-        # plt.title('Average Agent Gain From FACT Participation Under Cost Manipulation')
-        plt.legend(loc='best')
-        plt.xlim([-30, 30])
-        plt.grid(alpha=0.25)
-
-        # save figure
-        if save_file is None:
-            plt.show()
-        else:
-            sf = save_file + '-truthfulness-' + str(num_agents) + 'agents-' + dataset.lower() + '.jpg'
-            plt.savefig(sf, dpi=200)
-        '''
 
         # add for loop here over all the avg_fact_losses
         # plot results
@@ -382,52 +347,37 @@ if __name__ == '__main__':
 
     # iid
     cifar10_random_path_iid = 'output/CIFAR10/fact-random-sandwich-uniform-cost-run1-cifar10-16devices'
-    cifar10_deterministic_path_iid = 'output/CIFAR10/fact-deterministic-sandwich-uniform-cost-run1-cifar10-16devices'
     mnist_random_path_iid = 'output/MNIST/fact-random-sandwich-uniform-cost-run1-mnist-16devices'
-    mnist_deterministic_path_iid = 'output/MNIST/fact-deterministic-sandwich-uniform-cost-run1-mnist-16devices'
 
     # noniid D-0.3
     cifar10_random_path_noniid3 = 'output/CIFAR10/fact-random-sandwich-uniform-cost-noniid-0.3-run1-cifar10-16devices'
-    cifar10_deterministic_path_noniid3 = 'output/CIFAR10/fact-deterministic-sandwich-uniform-cost-noniid-0.3-run1-cifar10-16devices'
     mnist_random_path_noniid3 = 'output/MNIST/fact-random-sandwich-uniform-cost-noniid-0.3-run1-mnist-16devices'
-    mnist_deterministic_path_noniid3 = 'output/MNIST/fact-deterministic-sandwich-uniform-cost-noniid-0.3-run1-mnist-16devices'
 
     # noniid D-0.6
     cifar10_random_path_noniid6 = 'output/CIFAR10/fact-random-sandwich-uniform-cost-noniid-0.6-run1-cifar10-16devices'
-    cifar10_deterministic_path_noniid6 = 'output/CIFAR10/fact-deterministic-sandwich-uniform-cost-noniid-0.6-run1-cifar10-16devices'
     mnist_random_path_noniid6 = 'output/MNIST/fact-random-sandwich-uniform-cost-noniid-0.6-run1-mnist-16devices'
-    mnist_deterministic_path_noniid6 = 'output/MNIST/fact-deterministic-sandwich-uniform-cost-noniid-0.6-run1-mnist-16devices'
 
-    # multiple paths
-    mnist_paths_iid = [mnist_random_path_iid, mnist_deterministic_path_iid]
-    cifar_paths_iid = [cifar10_random_path_iid, cifar10_deterministic_path_iid]
-    mnist_paths_noniid3 = [mnist_random_path_noniid3, mnist_deterministic_path_noniid3]
-    cifar_paths_noniid3 = [cifar10_random_path_noniid3, cifar10_deterministic_path_noniid3]
-    mnist_paths_noniid6 = [mnist_random_path_noniid6, mnist_deterministic_path_noniid6]
-    cifar_paths_noniid6 = [cifar10_random_path_noniid6, cifar10_deterministic_path_noniid6]
+    # combined
+    combined_cifar = [cifar10_random_path_iid, cifar10_random_path_noniid6, cifar10_random_path_noniid3]
+    combined_mnist = [mnist_random_path_iid, mnist_random_path_noniid6, mnist_random_path_noniid3]
 
     # initialize postprocessing
     pp = Postprocessing()
 
     # loss plots
-    # pp.run_loss_plot(cifar10_random_path_noniid6, save_file='noniid6-2')
+    pp.run_loss_plot(cifar10_random_path_iid, save_file='iid')
+    pp.run_loss_plot(cifar10_random_path_noniid6, save_file='noniid6')
+    pp.run_loss_plot(cifar10_random_path_noniid3, save_file='noniid3')
 
     # loss histogram and truthfulness plots
-    # pp.run_loss_histogram(cifar10_deterministic_path_iid, save_file='iid')
-    # pp.run_loss_histogram(cifar10_deterministic_path_noniid6, save_file='noniid6')
-    # pp.run_loss_histogram(cifar10_deterministic_path_noniid3, save_file='noniid3')
-    # pp.run_loss_histogram(mnist_deterministic_path_iid, save_file='iid')
-    # pp.run_loss_histogram(mnist_deterministic_path_noniid6, save_file='noniid6')
-    # pp.run_loss_histogram(mnist_deterministic_path_noniid3, save_file='noniid3')
+    pp.run_loss_histogram(cifar10_random_path_iid, save_file='iid')
+    pp.run_loss_histogram(cifar10_random_path_noniid6, save_file='noniid6')
+    pp.run_loss_histogram(cifar10_random_path_noniid3, save_file='noniid3')
 
-    # penalty for using sub-optimal data contributions
+    # penalty for using suboptimal data contributions
+    pp.penalty(cifar10_random_path_iid, save_file='penalty')
 
-    # initialize lambda -- add into the loss computations
-    # compute how penalty increases with a very large lambda
-
-    # pp.penalty(mnist_random_path_noniid3, save_file='penalty')
-
-    pp.truthfulness_plots([cifar10_random_path_iid, cifar10_random_path_noniid6, cifar10_random_path_noniid3],
-                          save_file='vary-dist')
+    # truthfulness plots
+    pp.truthfulness_plots(combined_cifar, save_file='vary-dist')
 
 

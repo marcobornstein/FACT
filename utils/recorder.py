@@ -128,11 +128,9 @@ class Recorder(object):
         np.savetxt(self.saveFolderName + '/r' + str(self.rank) + '-marginal-costs.log', self.marginal_costs,
                    delimiter=',')
 
-    def save_benefits(self, agent_net_loss, average_other_agent_loss, fact_loss, avg_benefit_random, avg_benefit_det):
+    def save_benefits(self, agent_net_loss, average_other_agent_loss, fact_loss, avg_benefit_random):
         self.benefits.append(agent_net_loss)
         self.benefits.append(average_other_agent_loss)
         self.benefits.append(fact_loss)
         np.savetxt(self.saveFolderName + '/r' + str(self.rank) + '-benefits.log', self.benefits, delimiter=',')
         np.save(self.saveFolderName + '/r' + str(self.rank) + '-expected-epsilon-benefit-random', avg_benefit_random)
-        np.save(self.saveFolderName + '/r' + str(self.rank) + '-expected-epsilon-benefit-deterministic',
-                avg_benefit_det)

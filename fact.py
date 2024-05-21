@@ -36,8 +36,6 @@ if __name__ == '__main__':
     uniform_cost = config['uniform_cost']
     non_iid = config['non_iid']
     alpha = config['dirichlet_value']
-    sandwich = config['sandwich']
-    random_mech = config['random_mechanism']
     seed = config['random_seed']
     name = config['name']
 
@@ -143,8 +141,7 @@ if __name__ == '__main__':
     net_losses = np.empty(size, dtype=np.float64)
     comm.Allgather(np.array([agent_net_loss], dtype=np.float64), net_losses)
     average_other_agent_loss = (np.sum(net_losses) - agent_net_loss) / (size - 1)
-    fact_loss, avg_benefit_random, avg_benefit_det = truthfulness_mechanism(marginal_cost, num_data, agent_net_loss,
+    fact_loss, avg_benefit_random = truthfulness_mechanism(marginal_cost, num_data, agent_net_loss,
                                                                             average_other_agent_loss, size, agents=1000,
-                                                                            rounds=100000, h=81, normal=True,
-                                                                            sandwich=sandwich)
-    recorder.save_benefits(agent_net_loss, average_other_agent_loss, fact_loss, avg_benefit_random, avg_benefit_det)
+                                                                            rounds=100000, h=81, normal=True)
+    recorder.save_benefits(agent_net_loss, average_other_agent_loss, fact_loss, avg_benefit_random)
