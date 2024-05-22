@@ -42,10 +42,81 @@ class Postprocessing:
         plt.plot(vary_data, penalties_plus_cost, color='tab:red')
         plt.plot(true_m, penalties[np.argwhere(vary_data == true_m)[0]], 'h', color='tab:blue', markersize=8,
                  label='True Optimal Contribution')
-        plt.xlabel('Data Contributed $m_i$')
-        plt.ylabel('Free-Riding Penalty + Data Costs')
-        plt.legend(loc='best')
+        plt.xlabel('Data Contributed $m_i$', fontsize=20, weight='bold')
+        plt.ylabel('Free-Riding Penalty + Data Costs', fontsize=20, weight='bold')
+        plt.legend(loc='best', fontsize=15)
         plt.xticks(vary_data[::50])
+        plt.xlim([num_data - 500, num_data + 500])
+        plt.tick_params(axis='both', which='major', labelsize=15)
+        plt.grid(alpha=0.25)
+
+        # save figure
+        if save_file is None:
+            plt.show()
+        else:
+            sf = save_file + '-truthfulness-' + str(num_agents) + 'agents-' + dataset.lower() + '.jpg'
+            plt.savefig(sf, dpi=200)
+
+    def truthfulness_plots(self, data_paths, save_file=None, runs=3, h=121):
+
+        # loss or accuracy
+        dt = 'loss.log'
+
+        # initialize eps
+        epsilons = np.linspace(-0.3, 0.3, h, endpoint=True) * 100
+
+        ls = [':', '--', '-']
+        label_add = [' IID', ' N-IID (D-0.6)', ' N-IID (D-0.3)']
+
+        plt.figure(1, figsize=(8, 6))
+        plt.figure(2, figsize=(8, 6))
+
+        for v, data_path in enumerate(data_paths):
+
+            # check file existence
+            _, dataset, begin_path, end_path = self.path_check(data_path)
+            num_data = 3125 if dataset.lower() == 'cifar10' else 3750
+
+            y_mean_local, _, _, y_mean_fed, _, _, _, num_agents = self.get_loss_data(begin_path, end_path, runs, dt)
+            avg_local_loss = y_mean_local[-1]
+            avg_fed_loss = y_mean_fed[-1]
+            net_loss = avg_local_loss - avg_fed_loss
+
+            # get penalty term for free-riding (this is minimal because no free-riding at optimal ~ only tiny value)
+            alpha = 2 - 1e-6
+            lamb, mc, _, total_data, _ = self.get_lambda(data_path, alpha, num_agents, offset=2)
+            penalty = lamb * np.square(mc / (2 * lamb) - 2 / (4 * lamb * np.square(total_data)))
+
+            # get average benefit from participating in FACT
+            agent_net = np.empty((runs, num_agents))
+            other_agent_net = np.empty((runs, num_agents))
+            for run in range(1, runs + 1):
+                file = begin_path + '-run' + str(run) + end_path
+                fact_benefit = self.unpack_data(file, 3, num_agents, datatype='benefits.log')
+                agent_net[run - 1, :] = fact_benefit[0, :]
+                other_agent_net[run - 1, :] = fact_benefit[1, :]
+
+            # get truthfulness data
+            avg_agent_net = np.mean(agent_net, axis=0)
+            avg_other_agent_net = np.mean(other_agent_net, axis=0)
+            fbr = np.empty((num_agents, h))
+            fl = np.empty(num_agents)
+            for i in tqdm(range(num_agents)):
+                fl[i], fbr[i, :] = truthfulness_mechanism(mc, num_data, avg_agent_net[i], avg_other_agent_net[i],
+                                                          num_agents, h=h, normal=True, agents=2000, rounds=100000)
+
+            avg_fbr = np.mean(fbr, axis=0) + penalty
+
+            # plot truthfulness
+            plt.figure(1)
+            plt.plot(epsilons, net_loss - avg_fbr, self.colors[0], label=label_add[v], linestyle=ls[v])
+
+        plt.xlabel('Percent (%) Added/Subtracted from True Cost $c_i$', fontsize=20, weight='bold')
+        plt.ylabel('Net Improvement in Loss', fontsize=20, weight='bold')
+        plt.legend(loc='upper left', fontsize=15)
+        # plt.legend(loc='upper right', fontsize=15)
+        plt.xlim([-30, 30])
+        plt.tick_params(axis='both', which='major', labelsize=15)
         plt.grid(alpha=0.25)
 
         # save figure
@@ -87,50 +158,29 @@ class Postprocessing:
         avg_agent_net = np.mean(agent_net, axis=0)
         avg_other_agent_net = np.mean(other_agent_net, axis=0)
         fbr = np.empty((num_agents, h))
-        fbd = np.empty((num_agents, h))
         fl = np.empty(num_agents)
         for i in tqdm(range(num_agents)):
-            fl[i], fbr[i, :], fbd[i, :] = truthfulness_mechanism(mc, num_data, avg_agent_net[i], avg_other_agent_net[i],
-                                                                 num_agents, h=h, sandwich=True, normal=True,
-                                                                 agents=2000, rounds=100000)
+            fl[i], fbr[i, :] = truthfulness_mechanism(mc, num_data, avg_agent_net[i], avg_other_agent_net[i],
+                                                      num_agents, h=h, normal=True, agents=2000, rounds=100000)
 
-        avg_fbr = np.mean(fbr, axis=0) + penalty
-        avg_fbd = np.mean(fbd, axis=0) + penalty
         fact_loss = np.mean(fl) + penalty
-
-        # initialize eps
-        epsilons = np.linspace(-0.3, 0.3, h, endpoint=True) * 100
-
-        print(epsilons[np.argmin(avg_fbd)])
-        print(epsilons[np.argmin(avg_fbr)])
-
-        # plot truthfulness
-        plt.figure(figsize=(8, 6))
-        plt.plot(epsilons, net_loss - avg_fbr, self.colors[0], label='Random Mechanism')
-        plt.plot(epsilons, net_loss - avg_fbd, self.colors[1], label='Deterministic Mechanism')
-        plt.xlabel('Percent (%) Added/Subtracted from True Cost $c_i$')
-        plt.ylabel('Net Improvement in Loss')
-        # plt.title('Average Agent Gain From FACT Participation Under Cost Manipulation')
-        plt.legend(loc='best')
-        plt.xlim([-30, 30])
-        plt.grid(alpha=0.25)
-
-        # save figure
-        if save_file is None:
-            plt.show()
-        else:
-            sf = save_file + '-truthfulness-' + str(num_agents) + 'agents-' + dataset.lower() + '.jpg'
-            plt.savefig(sf, dpi=200)
 
         # add for loop here over all the avg_fact_losses
         # plot results
         plt.figure(figsize=(8, 6))
-        plt.bar(['Local Training', 'FACT Training', 'Traditional FL Training'],
+        plt.bar(["Local Training", 'FACT Training', 'Traditional FL'],
                 [avg_local_loss, fact_loss+avg_fed_loss, avg_fed_loss],
                 color=['tab:red', 'tab:blue', 'tab:green'])
-        plt.ylabel('Loss')
+        plt.ylabel('Loss', fontsize=25, weight='bold')
+        plt.xticks(fontsize=17, weight='bold')
+        plt.yticks(fontsize=17, weight='bold')
+        if dataset.lower() == 'cifar10':
+            plt.ylim([0, 7])
+        else:
+            plt.ylim([0.001, 2])
+            plt.yscale("log")
         plt.grid(alpha=0.25, axis='y')
-
+        plt.tick_params(axis='both', which='major', labelsize=16)
         # save figure
         if save_file is None:
             plt.show()
@@ -160,9 +210,11 @@ class Postprocessing:
         plt.plot(range(epochs), y_mean_fed, color='b', label='Federated Training')
         plt.fill_between(range(epochs), y_min_fed, y_max_fed, alpha=0.2, color='b')
 
-        plt.xlabel('Epochs')
-        plt.ylabel('Test Loss')
-        plt.legend(loc='best')
+        plt.xlabel('Epochs', fontsize=20, weight='bold')
+        plt.ylabel('Test Loss', fontsize=20, weight='bold')
+        plt.xticks(fontsize=17, weight='bold')
+        plt.yticks(fontsize=17, weight='bold')
+        plt.legend(loc='best', fontsize=15)
         if dataset.lower() == 'mnist':
             plt.ylim([0.01, 2.5])
             plt.yscale("log")
@@ -175,7 +227,7 @@ class Postprocessing:
         if save_file is None:
             plt.show()
         else:
-            save_file = save_file + '-' + str(num_agents) +'agents-' + dataset.lower() + '.jpg'
+            save_file = save_file + '-' + str(num_agents) + 'agents-' + dataset.lower() + '.jpg'
             plt.savefig(save_file, dpi=200)
 
     def get_epoch_data(self, data_path, datatype='fed-epoch-loss.log'):
@@ -238,10 +290,10 @@ class Postprocessing:
         return np.array(means), np.array(mins), np.array(maxs)
 
     def plot_ci(self, x, y, num_runs, num_dots, mylegend, ls='-', lw=3, transparency=0.2):
-        assert(x.ndim == 1)
-        assert(x.size == num_dots)
-        assert(y.ndim == 2)
-        assert(y.shape == (num_runs, num_dots))
+        assert (x.ndim == 1)
+        assert (x.size == num_dots)
+        assert (y.ndim == 2)
+        assert (y.shape == (num_runs, num_dots))
         y_mean, y_min, y_max = self.generate_confidence_interval(y)
         plt.plot(x, y_mean, 'o-', label=mylegend, linestyle=ls, linewidth=lw)  # , label=r'$\alpha$={}'.format(alpha))
         plt.fill_between(x, y_min, y_max, alpha=transparency)
@@ -295,46 +347,35 @@ if __name__ == '__main__':
 
     # iid
     cifar10_random_path_iid = 'output/CIFAR10/fact-random-sandwich-uniform-cost-run1-cifar10-16devices'
-    cifar10_deterministic_path_iid = 'output/CIFAR10/fact-deterministic-sandwich-uniform-cost-run1-cifar10-16devices'
     mnist_random_path_iid = 'output/MNIST/fact-random-sandwich-uniform-cost-run1-mnist-16devices'
-    mnist_deterministic_path_iid = 'output/MNIST/fact-deterministic-sandwich-uniform-cost-run1-mnist-16devices'
 
     # noniid D-0.3
     cifar10_random_path_noniid3 = 'output/CIFAR10/fact-random-sandwich-uniform-cost-noniid-0.3-run1-cifar10-16devices'
-    cifar10_deterministic_path_noniid3 = 'output/CIFAR10/fact-deterministic-sandwich-uniform-cost-noniid-0.3-run1-cifar10-16devices'
     mnist_random_path_noniid3 = 'output/MNIST/fact-random-sandwich-uniform-cost-noniid-0.3-run1-mnist-16devices'
-    mnist_deterministic_path_noniid3 = 'output/MNIST/fact-deterministic-sandwich-uniform-cost-noniid-0.3-run1-mnist-16devices'
 
     # noniid D-0.6
     cifar10_random_path_noniid6 = 'output/CIFAR10/fact-random-sandwich-uniform-cost-noniid-0.6-run1-cifar10-16devices'
-    cifar10_deterministic_path_noniid6 = 'output/CIFAR10/fact-deterministic-sandwich-uniform-cost-noniid-0.6-run1-cifar10-16devices'
     mnist_random_path_noniid6 = 'output/MNIST/fact-random-sandwich-uniform-cost-noniid-0.6-run1-mnist-16devices'
-    mnist_deterministic_path_noniid6 = 'output/MNIST/fact-deterministic-sandwich-uniform-cost-noniid-0.6-run1-mnist-16devices'
 
-    # multiple paths
-    mnist_paths_iid = [mnist_random_path_iid, mnist_deterministic_path_iid]
-    cifar_paths_iid = [cifar10_random_path_iid, cifar10_deterministic_path_iid]
-    mnist_paths_noniid3 = [mnist_random_path_noniid3, mnist_deterministic_path_noniid3]
-    cifar_paths_noniid3 = [cifar10_random_path_noniid3, cifar10_deterministic_path_noniid3]
-    mnist_paths_noniid6 = [mnist_random_path_noniid6, mnist_deterministic_path_noniid6]
-    cifar_paths_noniid6 = [cifar10_random_path_noniid6, cifar10_deterministic_path_noniid6]
+    # combined
+    combined_cifar = [cifar10_random_path_iid, cifar10_random_path_noniid6, cifar10_random_path_noniid3]
+    combined_mnist = [mnist_random_path_iid, mnist_random_path_noniid6, mnist_random_path_noniid3]
 
     # initialize postprocessing
     pp = Postprocessing()
 
     # loss plots
-    # pp.run_loss_plot(cifar10_random_path_noniid6, save_file='noniid6-2')
+    pp.run_loss_plot(cifar10_random_path_iid, save_file='iid')
+    pp.run_loss_plot(cifar10_random_path_noniid6, save_file='noniid6')
+    pp.run_loss_plot(cifar10_random_path_noniid3, save_file='noniid3')
 
     # loss histogram and truthfulness plots
     pp.run_loss_histogram(cifar10_random_path_iid, save_file='iid')
     pp.run_loss_histogram(cifar10_random_path_noniid6, save_file='noniid6')
     pp.run_loss_histogram(cifar10_random_path_noniid3, save_file='noniid3')
 
-    # penalty for using sub-optimal data contributions
+    # penalty for using suboptimal data contributions
+    pp.penalty(cifar10_random_path_iid, save_file='penalty')
 
-    # initialize lambda -- add into the loss computations
-    # compute how penalty increases with a very large lambda
-
-    # pp.penalty(mnist_random_path_noniid3, save_file='penalty')
-
-
+    # truthfulness plots
+    pp.truthfulness_plots(combined_cifar, save_file='vary-dist')
