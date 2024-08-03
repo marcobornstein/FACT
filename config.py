@@ -34,5 +34,24 @@ configs = {
             'dirichlet_value': 0.3,
             'uniform_cost': True,
             'name': 'fact-random-sandwich-uniform-cost-iid-run1'
+        },
+
+    'ham10000': {
+            'num_train_data': 10015,
+            'train_bs': 64,
+            'test_bs': 128,
+            'lr': 1e-3,
+            'marginal_cost': 1.024e-07,
+            'local_steps': 6,
+            'random_seed': 1,
+            'test_frequency': 500,
+            'log_frequency': 60,
+            'test_batches': 30,
+            'epochs': 10,
+            'file_path': 'output',
+            'non_iid': False,
+            'dirichlet_value': 0.3,
+            'uniform_cost': True,
+            'name': 'fact-random-sandwich-uniform-cost-iid-run1'
         }
 }
