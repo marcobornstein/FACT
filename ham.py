@@ -6,13 +6,11 @@ import os
 import shutil
 from sklearn.model_selection import train_test_split
 from torchvision import models, transforms, datasets
-from torch.utils.data import DataLoader, Dataset
-from torch.autograd import Variable
-from PIL import Image
+from torch.utils.data import DataLoader
+from mpi4py import MPI
 from train_test import local_training, federated_training
 from utils.recorder import Recorder
 from config import configs
-from tqdm import tqdm
 
 
 def set_parameter_requires_grad(m, feature_extracting):
@@ -46,73 +44,6 @@ def create_directory_structure(dataset, output_folder):
         shutil.copy(image_path, class_dir)
 
 
-def train(train_dataloader, m, criterion, opt, epoch, total_loss_train, total_acc_train):
-    m.train()
-    train_loss = AverageMeter()
-    train_acc = AverageMeter()
-    curr_iter = (epoch - 1) * len(train_dataloader)
-    for i, data in enumerate(train_dataloader):
-
-        images, labels = data
-
-        N = images.size(0)
-        images = Variable(images).to(device)
-        labels = Variable(labels).to(device)
-
-        opt.zero_grad()
-        outputs = m(images)
-
-        loss = criterion(outputs, labels)
-        loss.backward()
-        opt.step()
-        prediction = outputs.max(1, keepdim=True)[1]
-        train_acc.update(prediction.eq(labels.view_as(prediction)).sum().item()/N)
-        train_loss.update(loss.item())
-        curr_iter += 1
-        if (i + 1) % 10 == 0:
-            print('[epoch %d], [iter %d / %d], [train loss %.5f], [train acc %.5f]' % (
-                epoch, i + 1, len(train_dataloader), train_loss.avg, train_acc.avg))
-            total_loss_train.append(train_loss.avg)
-            total_acc_train.append(train_acc.avg)
-    return train_loss.avg, train_acc.avg, total_loss_train, total_acc_train
-
-
-class HAM10000(Dataset):
-    def __init__(self, df, transform=None):
-        self.df = df
-        self.transform = transform
-
-    def __len__(self):
-        return len(self.df)
-
-    def __getitem__(self, index):
-        # Load data and get label
-        X = Image.open(self.df['path'][index])
-        y = torch.tensor(int(self.df['cell_type_idx'][index]))
-
-        if self.transform:
-            X = self.transform(X)
-
-        return X, y
-
-
-class AverageMeter(object):
-    def __init__(self):
-        self.reset()
-
-    def reset(self):
-        self.val = 0
-        self.avg = 0
-        self.sum = 0
-        self.count = 0
-
-    def update(self, val, n=1):
-        self.val = val
-        self.sum += val * n
-        self.count += n
-        self.avg = self.sum / self.count
-
-
 if __name__ == '__main__':
 
     random_seed = 2024
@@ -123,6 +54,21 @@ if __name__ == '__main__':
     np.random.seed(random_seed)
     torch.manual_seed(random_seed)
     torch.cuda.manual_seed(random_seed)
+
+    # initialize MPI
+    comm = MPI.COMM_WORLD
+    rank = comm.Get_rank()
+    size = comm.Get_size()
+
+    if torch.cuda.is_available():
+        num_gpus = torch.cuda.device_count()
+        gpu_id = rank % num_gpus
+        dev = ["cuda:" + str(i) for i in range(num_gpus)]
+        device = dev[gpu_id]
+
+    else:
+        num_gpus = 0
+        device = "cpu"
 
     data_dir = 'data/HAM10000'
     all_image_path = glob.glob(os.path.join(data_dir, 'HAM_10000_Images/', '*.jpg'))
@@ -170,8 +116,6 @@ if __name__ == '__main__':
     input_size = 224
 
     # place model on device
-    # device = torch.device('cuda:0') If GPU available
-    device = torch.device('cpu')  # If using cpu
     model = model_ft.to(device)
 
     # define the transformation of the train images.
@@ -205,12 +149,3 @@ if __name__ == '__main__':
 
     loss_local = local_training(model, train_loader, test_loader, device, loss_fn, optimizer, epochs=10,
                                 log_frequency=10, recorder=recorder, scheduler=None)
-
-    """
-    epoch_num = 10
-    best_val_acc = 0
-    total_loss_val, total_acc_val = [], []
-    for e in tqdm(range(1, epoch_num + 1)):
-        loss_train, acc_train, total_loss_val, total_acc_val = train(train_loader, model, loss_fn, optimizer, e,
-                                                                     total_loss_val, total_acc_val)
-    """
