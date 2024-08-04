@@ -37,10 +37,11 @@ configs = {
         },
 
     'ham10000': {
-            'train_bs': 256,
+            'num_train_data': 8012,
+            'train_bs': 128,
             'test_bs': 1024,
             'lr': 1e-3,
-            'marginal_cost': 1.024e-07,
+            'marginal_cost': 7.79e-07, # gets to 801 data points, 10 workers
             'local_steps': 6,
             'random_seed': 2024,
             'test_frequency': 500,
@@ -51,7 +52,7 @@ configs = {
             'non_iid': False,
             'dirichlet_value': 0.3,
             'uniform_cost': True,
-            'data_path': '../../../../../cmlscratch/marcob/HAM10000',  # 'data/HAM10000',
+            'data_path': 'data/HAM10000', # '../../../../../cmlscratch/marcob/HAM10000',  # 'data/HAM10000',
             'name': 'fact-random-sandwich-uniform-cost-iid-run1'
         }
 }

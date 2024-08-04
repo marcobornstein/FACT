@@ -57,6 +57,7 @@ if __name__ == '__main__':
     num_epochs = config['epochs']
     name = config['name']
     marginal_cost = config['marginal_cost']
+    local_steps = config['local_steps']
 
     # reproducibility
     np.random.seed(random_seed)
@@ -124,6 +125,9 @@ if __name__ == '__main__':
     df_train = df_train.reset_index()
     df_test = df_test.reset_index()
     num_classes = len(class_frequency.index)
+
+    print(df_train.shape)
+    exit()
 
     # create_directory_structure(df_train, os.path.join(data_dir, 'HAM_Loader_Train'))
     # create_directory_structure(df_test, os.path.join(data_dir, 'HAM_Loader_Test'))
@@ -206,9 +210,8 @@ if __name__ == '__main__':
     if rank == 0:
         print('Beginning Federated Training...')
 
-    """
-    loss_fed = federated_training(model, FLC, trainloader, testloader, device, criterion, optimizer, epochs,
-                                  log_frequency, recorder, scheduler, local_steps=local_steps)
+    loss_fed = federated_training(model, FLC, train_loader, test_loader, device, loss_fn, optimizer, num_epochs,
+                                  log_frequency, recorder, None, local_steps=local_steps)
 
     MPI.COMM_WORLD.Barrier()
 
@@ -221,4 +224,3 @@ if __name__ == '__main__':
                                                            average_other_agent_loss, size, agents=1000,
                                                            rounds=100000, h=81, normal=True)
     recorder.save_benefits(agent_net_loss, average_other_agent_loss, fact_loss, avg_benefit_random)
-    """
