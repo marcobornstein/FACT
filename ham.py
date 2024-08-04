@@ -47,9 +47,9 @@ def create_directory_structure(dataset, output_folder):
 if __name__ == '__main__':
 
     config = configs["ham10000"]
-    batch_size = config['batch_size']
+    batch_size = config['train_bs']
     random_seed = config['random_seed']
-    learning_rate = config['learning_rate']
+    learning_rate = config['lr']
     data_dir = config['data_path']
 
     # reproducibility
@@ -106,7 +106,8 @@ if __name__ == '__main__':
     # create_directory_structure(df_test, os.path.join(data_dir, 'HAM_Loader_Test'))
 
     # add weighting for class imbalance
-    loss_fn = torch.nn.CrossEntropyLoss(weight=torch.tensor(class_frequency.to_numpy(dtype=np.float32)))
+    weights = torch.tensor(class_frequency.to_numpy(dtype=np.float32))
+    loss_fn = torch.nn.CrossEntropyLoss(weight=weights.to(device))
     # loss_fn = torch.nn.CrossEntropyLoss()
 
     # get pretrained model
