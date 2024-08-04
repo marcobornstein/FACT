@@ -13,8 +13,17 @@ class Postprocessing:
 
         # check file existence
         _, dataset, begin_path, end_path = self.path_check(data_path)
-        num_data = 3125 if dataset.lower() == 'cifar10' else 3750
-        total_data = num_data * num_agents
+        if dataset.lower() == "cifar10":
+            num_data = 3125
+            total_data = num_data * num_agents
+        elif dataset.lower() == "mnist":
+            num_data = 3750
+            total_data = num_data * num_agents
+        elif dataset.lower() == "ham":
+            num_data = 801
+            total_data = 10015
+        else:
+            ValueError("Incorrect Dataset Provided")
         file = begin_path + '-run1' + end_path
         agent_mcs = self.unpack_data(file, 1, num_agents, datatype='costs.log').flatten()
         mc = agent_mcs[0]
@@ -23,7 +32,7 @@ class Postprocessing:
 
         return lamb, mc, num_data, total_data, dataset
 
-    def penalty(self, data_path, alpha=2, offset=2, num_agents=16, h=201, save_file=None):
+    def penalty(self, data_path, alpha=2, offset=2, num_agents=16, h=201, runs=3, save_file=None):
 
         # get lambda
         alpha -= 1e-6
@@ -68,14 +77,19 @@ class Postprocessing:
         ls = [':', '--', '-']
         label_add = [' IID', ' N-IID (D-0.6)', ' N-IID (D-0.3)']
 
-        plt.figure(1, figsize=(8, 6))
-        plt.figure(2, figsize=(8, 6))
-
+        plt.figure(figsize=(8, 6))
         for v, data_path in enumerate(data_paths):
 
             # check file existence
             _, dataset, begin_path, end_path = self.path_check(data_path)
-            num_data = 3125 if dataset.lower() == 'cifar10' else 3750
+            if dataset.lower() == "cifar10":
+                num_data = 3125
+            elif dataset.lower() == "mnist":
+                num_data = 3750
+            elif dataset.lower() == "ham":
+                num_data = 801
+            else:
+                ValueError("Incorrect Dataset Provided")
 
             y_mean_local, _, _, y_mean_fed, _, _, _, num_agents = self.get_loss_data(begin_path, end_path, runs, dt)
             avg_local_loss = y_mean_local[-1]
@@ -108,13 +122,14 @@ class Postprocessing:
             avg_fbr = np.mean(fbr, axis=0) + penalty
 
             # plot truthfulness
-            plt.figure(1)
             plt.plot(epsilons, net_loss - avg_fbr, self.colors[0], label=label_add[v], linestyle=ls[v])
 
         plt.xlabel('Percent (%) Added/Subtracted from True Cost $c_i$', fontsize=20, weight='bold')
         plt.ylabel('Net Improvement in Loss', fontsize=20, weight='bold')
-        plt.legend(loc='upper left', fontsize=15)
-        # plt.legend(loc='upper right', fontsize=15)
+
+        if dataset.lower() != 'ham':
+            plt.legend(loc='upper left', fontsize=15)
+            # plt.legend(loc='upper right', fontsize=15)
         plt.xlim([-30, 30])
         plt.tick_params(axis='both', which='major', labelsize=15)
         plt.grid(alpha=0.25)
@@ -133,7 +148,14 @@ class Postprocessing:
 
         # check file existence
         _, dataset, begin_path, end_path = self.path_check(data_path)
-        num_data = 3125 if dataset.lower() == 'cifar10' else 3750
+        if dataset.lower() == "cifar10":
+            num_data = 3125
+        elif dataset.lower() == "mnist":
+            num_data = 3750
+        elif dataset.lower() == "ham":
+            num_data = 801
+        else:
+            ValueError("Incorrect Dataset Provided")
 
         y_mean_local, _, _, y_mean_fed, _, _, epochs, num_agents = self.get_loss_data(begin_path, end_path, runs, dt)
         avg_local_loss = y_mean_local[-1]
@@ -176,7 +198,7 @@ class Postprocessing:
         plt.yticks(fontsize=17, weight='bold')
         if dataset.lower() == 'cifar10':
             plt.ylim([0, 7])
-        else:
+        elif dataset.lower() == 'mnist':
             plt.ylim([0.001, 2])
             plt.yscale("log")
         plt.grid(alpha=0.25, axis='y')
@@ -211,14 +233,17 @@ class Postprocessing:
         plt.fill_between(range(epochs), y_min_fed, y_max_fed, alpha=0.2, color='b')
 
         plt.xlabel('Epochs', fontsize=20, weight='bold')
-        plt.ylabel('Test Loss', fontsize=20, weight='bold')
+        if loss:
+            plt.ylabel('Test Loss', fontsize=20, weight='bold')
+        else:
+            plt.ylabel('Test Accuracy', fontsize=20, weight='bold')
         plt.xticks(fontsize=17, weight='bold')
         plt.yticks(fontsize=17, weight='bold')
         plt.legend(loc='best', fontsize=15)
-        if dataset.lower() == 'mnist':
+        if loss and dataset.lower() == 'mnist':
             plt.ylim([0.01, 2.5])
             plt.yscale("log")
-        else:
+        elif loss and dataset.lower() == 'cifar10':
             plt.ylim([0, 1.25 * 10**2])
             plt.yscale("symlog")
         plt.grid(alpha=0.25)
@@ -227,7 +252,8 @@ class Postprocessing:
         if save_file is None:
             plt.show()
         else:
-            save_file = save_file + '-' + str(num_agents) + 'agents-' + dataset.lower() + '.jpg'
+            save_file = save_file + '-' + str(num_agents) + 'agents-' + dataset.lower()
+            save_file = save_file + '-loss.jpg' if loss else save_file + '-acc.jpg'
             plt.savefig(save_file, dpi=200)
 
     def get_epoch_data(self, data_path, datatype='fed-epoch-loss.log'):
@@ -309,8 +335,13 @@ class Postprocessing:
             raise Exception(f"Incorrect Path Provided")
 
         # determine which dataset and which truthfulness method
-        method = 'Random Mechanism' if data_path.lower().find('random') > -1 else 'Deterministic Mechanism'
-        dataset = 'MNIST' if data_path.lower().find('mnist') > -1 else 'Cifar10'
+        method = 'Random Mechanism'
+        if data_path.lower().find('mnist') > -1:
+            dataset = 'MNIST'
+        elif data_path.lower().find('cifar') > -1:
+            dataset = 'Cifar10'
+        else:
+            dataset = 'HAM'
 
         # extract all runs
         split_paths = data_path.split("-run")
@@ -348,6 +379,7 @@ if __name__ == '__main__':
     # iid
     cifar10_random_path_iid = 'output/CIFAR10/fact-random-sandwich-uniform-cost-run1-cifar10-16devices'
     mnist_random_path_iid = 'output/MNIST/fact-random-sandwich-uniform-cost-run1-mnist-16devices'
+    ham_random_path_iid = 'output/HAM/fact-sandwich-uniform-cost-run1-ham10000-10devices'
 
     # noniid D-0.3
     cifar10_random_path_noniid3 = 'output/CIFAR10/fact-random-sandwich-uniform-cost-noniid-0.3-run1-cifar10-16devices'
@@ -365,17 +397,16 @@ if __name__ == '__main__':
     pp = Postprocessing()
 
     # loss plots
-    pp.run_loss_plot(cifar10_random_path_iid, save_file='iid')
-    pp.run_loss_plot(cifar10_random_path_noniid6, save_file='noniid6')
-    pp.run_loss_plot(cifar10_random_path_noniid3, save_file='noniid3')
+    pp.run_loss_plot(ham_random_path_iid, save_file='iid', runs=3, loss=False)
+    pp.run_loss_plot(ham_random_path_iid, save_file='iid', runs=3, loss=True)
 
     # loss histogram and truthfulness plots
-    pp.run_loss_histogram(cifar10_random_path_iid, save_file='iid')
-    pp.run_loss_histogram(cifar10_random_path_noniid6, save_file='noniid6')
-    pp.run_loss_histogram(cifar10_random_path_noniid3, save_file='noniid3')
+    pp.run_loss_histogram(ham_random_path_iid, save_file='iid', runs=3)
+    # pp.run_loss_histogram(cifar10_random_path_noniid6, save_file='noniid6')
+    # pp.run_loss_histogram(cifar10_random_path_noniid3, save_file='noniid3')
 
     # penalty for using suboptimal data contributions
-    pp.penalty(cifar10_random_path_iid, save_file='penalty')
+    pp.penalty(ham_random_path_iid, save_file='penalty', offset=1)
 
     # truthfulness plots
-    pp.truthfulness_plots(combined_cifar, save_file='vary-dist')
+    pp.truthfulness_plots([ham_random_path_iid], save_file='vary-dist', runs=3)
