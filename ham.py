@@ -125,9 +125,14 @@ if __name__ == '__main__':
     df_train = df_train.reset_index()
     df_test = df_test.reset_index()
     num_classes = len(class_frequency.index)
+    num_train_data = df_train.shape[0]
 
-    print(df_train.shape)
-    exit()
+    # ensure no leftover data before split
+    if np.sum(all_data) < num_train_data:
+        remainder = num_train_data - np.sum(all_data)
+        added_data, leftover = divmod(remainder, size)
+        all_data += added_data
+        all_data[0] += leftover
 
     # create_directory_structure(df_train, os.path.join(data_dir, 'HAM_Loader_Train'))
     # create_directory_structure(df_test, os.path.join(data_dir, 'HAM_Loader_Test'))
@@ -173,11 +178,8 @@ if __name__ == '__main__':
     # Define the training set using the table train_df and using the defined transitions (train_transform)
     training_set = datasets.ImageFolder(os.path.join(data_dir, 'HAM_Loader_Train'), transform=train_transform)
 
-    # split training set up amongst devices
-    split_size = len(training_set) // size
-
     # Create the splits
-    splits = random_split(training_set, [split_size] * size)
+    splits = random_split(training_set, all_data)
 
     # Select the desired split
     selected_dataset = splits[rank]
