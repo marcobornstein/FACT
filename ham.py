@@ -185,7 +185,7 @@ if __name__ == '__main__':
     selected_dataset = splits[rank]
 
     # load training data
-    train_loader = DataLoader(training_set, batch_size=batch_size, shuffle=True, num_workers=4)
+    train_loader = DataLoader(selected_dataset, batch_size=batch_size, shuffle=True, num_workers=4)
 
     # Same for the test set:
     test_set = datasets.ImageFolder(os.path.join(data_dir, 'HAM_Loader_Test'), transform=test_transform)
