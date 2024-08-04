@@ -6,11 +6,13 @@ import os
 import shutil
 from sklearn.model_selection import train_test_split
 from torchvision import models, transforms, datasets
-from torch.utils.data import DataLoader
+from torch.utils.data import DataLoader, random_split
 from mpi4py import MPI
 from train_test import local_training, federated_training
+from utils.communicator import Communicator
 from utils.recorder import Recorder
 from config import configs
+from utils.truthfulness import agent_contribution, truthfulness_mechanism
 
 
 def set_parameter_requires_grad(m, feature_extracting):
@@ -51,6 +53,10 @@ if __name__ == '__main__':
     random_seed = config['random_seed']
     learning_rate = config['lr']
     data_dir = config['data_path']
+    log_frequency = config['log_frequency']
+    num_epochs = config['epochs']
+    name = config['name']
+    marginal_cost = config['marginal_cost']
 
     # reproducibility
     np.random.seed(random_seed)
@@ -71,6 +77,23 @@ if __name__ == '__main__':
     else:
         num_gpus = 0
         device = "cpu"
+
+    # initialize federated communicator & recorder
+    FLC = Communicator(rank, size, comm, device)
+    recorder = Recorder(rank, size, config, name, "ham10000")
+
+    # keep note of true and reported marginal costs
+    recorder.save_costs(marginal_cost)
+
+    # compute amount of data to use
+    num_data, data_cost = agent_contribution(marginal_cost, offset=1)
+    print('rank: %d, local optimal data: %d, reported marginal cost %.3E' % (rank, num_data, marginal_cost))
+
+    # in order to partition data without overlap, share the amount of data each device will use
+    all_data = np.empty(size, dtype=np.int32)
+    comm.Allgather(np.array([num_data], dtype=np.int32), all_data)
+    self_weight = num_data / np.sum(all_data)
+    FLC.self_weight = self_weight
 
     all_image_path = glob.glob(os.path.join(data_dir, 'HAM_10000_Images/', '*.jpg'))
     imageid_path_dict = {os.path.splitext(os.path.basename(x))[0]: x for x in all_image_path}
@@ -106,19 +129,28 @@ if __name__ == '__main__':
     # create_directory_structure(df_test, os.path.join(data_dir, 'HAM_Loader_Test'))
 
     # add weighting for class imbalance
-    weights = torch.tensor(class_frequency.to_numpy(dtype=np.float32))
-    loss_fn = torch.nn.CrossEntropyLoss(weight=weights.to(device))
+    weights = class_frequency.to_numpy(dtype=np.float32)
+    weights = 1 - weights / np.sum(weights)
+    loss_fn = torch.nn.CrossEntropyLoss(weight=torch.tensor(weights).to(device))
     # loss_fn = torch.nn.CrossEntropyLoss()
 
     # get pretrained model
-    model_ft = models.resnet50(weights="IMAGENET1K_V2")
-    set_parameter_requires_grad(model_ft, False)
-    num_ftrs = model_ft.fc.in_features
-    model_ft.fc = torch.nn.Linear(num_ftrs, num_classes)
+    model = models.resnet50(weights="IMAGENET1K_V2")
+    set_parameter_requires_grad(model, False)
+    num_ftrs = model.fc.in_features
+    model.fc = torch.nn.Linear(num_ftrs, num_classes)
     input_size = 224
 
-    # place model on device
-    model = model_ft.to(device)
+    # synchronize models (so they are identical initially)
+    FLC.sync_models(model)
+
+    # save initial model for federated training
+    model_path = recorder.saveFolderName + '-model.pth'
+    if rank == 0:
+        torch.save(model, model_path)
+
+    # load model onto GPU (if available)
+    model.to(device)
 
     # define the transformation of the train images.
     train_transform = transforms.Compose(
@@ -136,6 +168,17 @@ if __name__ == '__main__':
 
     # Define the training set using the table train_df and using the defined transitions (train_transform)
     training_set = datasets.ImageFolder(os.path.join(data_dir, 'HAM_Loader_Train'), transform=train_transform)
+
+    # split training set up amongst devices
+    split_size = len(training_set) // size
+
+    # Create the splits
+    splits = random_split(training_set, [split_size] * size)
+
+    # Select the desired split
+    selected_dataset = splits[rank]
+
+    # load training data
     train_loader = DataLoader(training_set, batch_size=batch_size, shuffle=True, num_workers=4)
 
     # Same for the test set:
@@ -143,9 +186,39 @@ if __name__ == '__main__':
     test_loader = DataLoader(test_set, batch_size=batch_size, shuffle=False, num_workers=4)
 
     optimizer = torch.optim.Adam(model.parameters(), lr=learning_rate)
-    recorder = Recorder(0, 1, config, "test", "ham10000")
 
-    print('beginning training...')
+    # run local training (no federated mechanism)
+    MPI.COMM_WORLD.Barrier()
+    if rank == 0:
+        print('Beginning Local Training...')
 
-    loss_local = local_training(model, train_loader, test_loader, device, loss_fn, optimizer, epochs=10,
-                                log_frequency=10, recorder=recorder, scheduler=None)
+    loss_local = local_training(model, train_loader, test_loader, device, loss_fn, optimizer, epochs=num_epochs,
+                                log_frequency=log_frequency, recorder=recorder, scheduler=None)
+
+    MPI.COMM_WORLD.Barrier()
+
+    # reset model to the initial model
+    model = torch.load(model_path)
+    optimizer = torch.optim.Adam(model.parameters(), lr=learning_rate)
+    model.to(device)
+
+    MPI.COMM_WORLD.Barrier()
+    if rank == 0:
+        print('Beginning Federated Training...')
+
+    """
+    loss_fed = federated_training(model, FLC, trainloader, testloader, device, criterion, optimizer, epochs,
+                                  log_frequency, recorder, scheduler, local_steps=local_steps)
+
+    MPI.COMM_WORLD.Barrier()
+
+    # simulate the truthfulness mechanism
+    agent_net_loss = loss_local - loss_fed
+    net_losses = np.empty(size, dtype=np.float64)
+    comm.Allgather(np.array([agent_net_loss], dtype=np.float64), net_losses)
+    average_other_agent_loss = (np.sum(net_losses) - agent_net_loss) / (size - 1)
+    fact_loss, avg_benefit_random = truthfulness_mechanism(marginal_cost, num_data, agent_net_loss,
+                                                           average_other_agent_loss, size, agents=1000,
+                                                           rounds=100000, h=81, normal=True)
+    recorder.save_benefits(agent_net_loss, average_other_agent_loss, fact_loss, avg_benefit_random)
+    """

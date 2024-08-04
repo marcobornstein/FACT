@@ -37,7 +37,6 @@ configs = {
         },
 
     'ham10000': {
-            'num_train_data': 10015,
             'train_bs': 256,
             'test_bs': 1024,
             'lr': 1e-3,
@@ -45,7 +44,7 @@ configs = {
             'local_steps': 6,
             'random_seed': 2024,
             'test_frequency': 500,
-            'log_frequency': 60,
+            'log_frequency': 20,
             'test_batches': 30,
             'epochs': 50,
             'file_path': 'output',
