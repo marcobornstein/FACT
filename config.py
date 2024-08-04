@@ -43,7 +43,7 @@ configs = {
             'lr': 1e-3,
             'marginal_cost': 1.024e-07,
             'local_steps': 6,
-            'random_seed': 1,
+            'random_seed': 2024,
             'test_frequency': 500,
             'log_frequency': 60,
             'test_batches': 30,
@@ -52,6 +52,7 @@ configs = {
             'non_iid': False,
             'dirichlet_value': 0.3,
             'uniform_cost': True,
+            'data_path': 'data/HAM10000',
             'name': 'fact-random-sandwich-uniform-cost-iid-run1'
         }
 }

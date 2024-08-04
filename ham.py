@@ -46,9 +46,11 @@ def create_directory_structure(dataset, output_folder):
 
 if __name__ == '__main__':
 
-    random_seed = 2024
-    learning_rate = 1e-3
-    batch_size = 64  # 32 original
+    config = configs["ham10000"]
+    batch_size = config['batch_size']
+    random_seed = config['random_seed']
+    learning_rate = config['learning_rate']
+    data_dir = config['data_path']
 
     # reproducibility
     np.random.seed(random_seed)
@@ -70,7 +72,6 @@ if __name__ == '__main__':
         num_gpus = 0
         device = "cpu"
 
-    data_dir = 'data/HAM10000'
     all_image_path = glob.glob(os.path.join(data_dir, 'HAM_10000_Images/', '*.jpg'))
     imageid_path_dict = {os.path.splitext(os.path.basename(x))[0]: x for x in all_image_path}
     lesion_type_dict = {
@@ -141,8 +142,6 @@ if __name__ == '__main__':
     test_loader = DataLoader(test_set, batch_size=batch_size, shuffle=False, num_workers=4)
 
     optimizer = torch.optim.Adam(model.parameters(), lr=learning_rate)
-
-    config = configs["ham10000"]
     recorder = Recorder(0, 1, config, "test", "ham10000")
 
     print('beginning training...')
