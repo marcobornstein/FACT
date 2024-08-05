@@ -47,13 +47,13 @@ configs = {
             'test_frequency': 500,
             'log_frequency': 20,
             'test_batches': 30,
-            'epochs': 10,
+            'epochs': 50,
             'file_path': 'output',
             'non_iid': False,
             'dirichlet_value': 0.3,
-            'uniform_cost': True,
-            'robustness': {'use': True, 'irrational_agents': 2, 'fr_factor': 0.5},
+            'uniform_cost': False,
+            'robustness': {'use': True, 'irrational_agents': 8, 'fr_factor': 0.25},
             'data_path': '../../../../../cmlscratch/marcob/HAM10000',  # 'data/HAM10000',
-            'name': 'fact-robustness-2-uniform-cost-iid-run1'
+            'name': 'fact-robustness-8-nonuniform-cost-iid-run1'
         }
 }

@@ -122,6 +122,7 @@ def nonuniform_federated_training(model, communicator, trainloader, testloader, 
     i = 1
     total_steps = max_steps * epochs
     while True:
+        best_loss = 1e10
         running_loss = 0.0
         total_examples = 0
         correct_prediction = 0
@@ -140,10 +141,12 @@ def nonuniform_federated_training(model, communicator, trainloader, testloader, 
                 communicator.sync_models(model)
                 if i % total_steps == 0:
                     # spit out the final accuracy after training
-                    final_loss = test(model, loss_fn, testloader, device, recorder, epoch, return_loss=True, local=False)
-                    return final_loss
+                    loss = test(model, loss_fn, testloader, device, recorder, epoch, return_loss=True, local=False)
+                    best_loss = loss if loss < best_loss else best_loss
+                    return best_loss
                 else:
-                    test(model, loss_fn, testloader, device, recorder, epoch, local=False)
+                    loss = test(model, loss_fn, testloader, device, recorder, epoch, return_loss=True, local=False)
+                    best_loss = loss if loss < best_loss else best_loss
 
             # update counter
             i += 1

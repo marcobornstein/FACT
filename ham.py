@@ -238,7 +238,7 @@ if __name__ == '__main__':
         max_steps = np.max(total_steps)
         loss_fed = nonuniform_federated_training(model, FLC, train_loader, test_loader, device, loss_fn, optimizer,
                                                  max_steps, num_epochs, log_frequency, recorder, None,
-                                                 local_steps=1)
+                                                 local_steps=6)
 
     MPI.COMM_WORLD.Barrier()
 
