@@ -96,7 +96,6 @@ if __name__ == '__main__':
 
     # compute amount of data to use
     num_data, data_cost = agent_contribution(marginal_cost, offset=1)
-    print('rank: %d, local optimal data: %d, reported marginal cost %.3E' % (rank, num_data, marginal_cost))
 
     # in order to partition data without overlap, share the amount of data each device will use
     all_data = np.empty(size, dtype=np.int32)
@@ -109,6 +108,8 @@ if __name__ == '__main__':
         num_irrational_agents = robustness['irrational_agents']
         fr_factor = robustness['fr_factor']
         all_data[-num_irrational_agents:] = (fr_factor * all_data[-num_irrational_agents:]).astype(np.int32)
+    num_data = all_data[rank]
+    print('rank: %d, local optimal data: %d, reported marginal cost %.3E' % (rank, num_data, marginal_cost))
 
     all_image_path = glob.glob(os.path.join(data_dir, 'HAM_10000_Images/', '*.jpg'))
     imageid_path_dict = {os.path.splitext(os.path.basename(x))[0]: x for x in all_image_path}
@@ -237,7 +238,7 @@ if __name__ == '__main__':
         max_steps = np.max(total_steps)
         loss_fed = nonuniform_federated_training(model, FLC, train_loader, test_loader, device, loss_fn, optimizer,
                                                  max_steps, num_epochs, log_frequency, recorder, None,
-                                                 local_steps=6)
+                                                 local_steps=1)
 
     MPI.COMM_WORLD.Barrier()
 
