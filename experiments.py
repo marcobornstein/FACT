@@ -225,12 +225,12 @@ class Postprocessing:
         plt.figure(figsize=(8, 6))
 
         # local
-        plt.plot(range(epochs), y_mean_local, color='r', label='Local Training')
-        plt.fill_between(range(epochs), y_min_local, y_max_local, alpha=0.2, color='r')
+        plt.plot(range(1, epochs+1), y_mean_local, color='r', label='Local Training')
+        plt.fill_between(range(1, epochs+1), y_min_local, y_max_local, alpha=0.2, color='r')
 
         # fed
-        plt.plot(range(epochs), y_mean_fed, color='b', label='Federated Training')
-        plt.fill_between(range(epochs), y_min_fed, y_max_fed, alpha=0.2, color='b')
+        plt.plot(range(1, epochs+1), y_mean_fed, color='b', label='Federated Training')
+        plt.fill_between(range(1, epochs+1), y_min_fed, y_max_fed, alpha=0.2, color='b')
 
         plt.xlabel('Epochs', fontsize=20, weight='bold')
         if loss:
@@ -246,6 +246,7 @@ class Postprocessing:
         elif loss and dataset.lower() == 'cifar10':
             plt.ylim([0, 1.25 * 10**2])
             plt.yscale("symlog")
+        plt.xlim([1, epochs])
         plt.grid(alpha=0.25)
 
         # save figure
@@ -399,6 +400,13 @@ if __name__ == '__main__':
     # loss plots
     pp.run_loss_plot(ham_random_path_iid, save_file='iid', runs=3, loss=False)
     pp.run_loss_plot(ham_random_path_iid, save_file='iid', runs=3, loss=True)
+
+    # pp.run_loss_plot(cifar10_random_path_iid, save_file='iid', runs=3, loss=False)
+    # pp.run_loss_plot(cifar10_random_path_iid, save_file='iid', runs=3, loss=True)
+    # pp.run_loss_plot(cifar10_random_path_noniid6, save_file='noniid6', runs=3, loss=False)
+    # pp.run_loss_plot(cifar10_random_path_noniid6, save_file='noniid6', runs=3, loss=True)
+    # pp.run_loss_plot(cifar10_random_path_noniid3, save_file='noniid3', runs=3, loss=False)
+    # pp.run_loss_plot(cifar10_random_path_noniid3, save_file='noniid3', runs=3, loss=True)
 
     # loss histogram and truthfulness plots
     pp.run_loss_histogram(ham_random_path_iid, save_file='iid', runs=3)
