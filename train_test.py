@@ -117,6 +117,38 @@ def train_step(i, model, data, loss_fn, optimizer, recorder, communicator, devic
     return running_loss, running_time, total_examples, correct_prediction
 
 
+def nonuniform_federated_training(model, communicator, trainloader, testloader, device, loss_fn, optimizer, steps_per_e,
+                                  epochs, log_frequency, recorder, scheduler, local_steps=6):
+    i = 1
+    total_steps = steps_per_e * epochs
+    while True:
+        running_loss = 0.0
+        total_examples = 0
+        correct_prediction = 0
+        running_time = 0.0
+        model.train()
+        for data in trainloader:
+
+            # take one training step
+            train_step(i, model, data, loss_fn, optimizer, recorder, communicator, device, total_examples,
+                       correct_prediction, running_loss, running_time, local_steps, log_frequency, federated=True)
+
+            if i % steps_per_e == 0:
+                epoch = i//steps_per_e
+                if scheduler is not None:
+                    scheduler.step()
+                communicator.sync_models(model)
+                if i % total_steps == 0:
+                    # spit out the final accuracy after training
+                    final_loss = test(model, loss_fn, testloader, device, recorder, epoch, return_loss=True, local=False)
+                    return final_loss
+                else:
+                    test(model, loss_fn, testloader, device, recorder, epoch, local=False)
+
+            # update counter
+            i += 1
+
+
 def test(model, loss_fn, test_dl, device, recorder, epoch_num, test_batches=30,
          epoch=True, return_loss=False, local=True):
     correct = 0

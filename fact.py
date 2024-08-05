@@ -66,6 +66,12 @@ if __name__ == '__main__':
     # initialize recorder
     recorder = Recorder(rank, size, config, name, dataset)
 
+    # vary marginal cost if non-uniform
+    if uniform_cost:
+        marginal_cost = marginal_cost
+    else:
+        marginal_cost = np.random.normal(marginal_cost, 0.1 * marginal_cost)
+
     # keep note of true and reported marginal costs
     recorder.save_costs(marginal_cost)
 

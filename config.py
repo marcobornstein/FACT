@@ -41,7 +41,7 @@ configs = {
             'train_bs': 128,
             'test_bs': 1024,
             'lr': 1e-3,
-            'marginal_cost': 7.79e-07, # gets to 801 data points, 10 workers
+            'marginal_cost': 7.79e-07,  # gets to 801 data points, 10 workers
             'local_steps': 6,
             'random_seed': 2024,
             'test_frequency': 500,
@@ -51,7 +51,7 @@ configs = {
             'file_path': 'output',
             'non_iid': False,
             'dirichlet_value': 0.3,
-            'uniform_cost': True,
+            'uniform_cost': False,
             'data_path': '../../../../../cmlscratch/marcob/HAM10000',  # 'data/HAM10000',
             'name': 'fact-random-sandwich-uniform-cost-iid-run1'
         }

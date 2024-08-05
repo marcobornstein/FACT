@@ -8,7 +8,7 @@ from sklearn.model_selection import train_test_split
 from torchvision import models, transforms, datasets
 from torch.utils.data import DataLoader, random_split
 from mpi4py import MPI
-from train_test import local_training, federated_training
+from train_test import local_training, federated_training, nonuniform_federated_training
 from utils.communicator import Communicator
 from utils.recorder import Recorder
 from config import configs
@@ -58,11 +58,7 @@ if __name__ == '__main__':
     name = config['name']
     marginal_cost = config['marginal_cost']
     local_steps = config['local_steps']
-
-    # reproducibility
-    np.random.seed(random_seed)
-    torch.manual_seed(random_seed)
-    torch.cuda.manual_seed(random_seed)
+    uniform_cost = config['uniform_cost']
 
     # initialize MPI
     comm = MPI.COMM_WORLD
@@ -79,9 +75,20 @@ if __name__ == '__main__':
         num_gpus = 0
         device = "cpu"
 
+    # reproducibility
+    torch.manual_seed(random_seed + rank)
+    np.random.seed(random_seed + rank)
+    torch.cuda.manual_seed(random_seed + rank)
+
     # initialize federated communicator & recorder
     FLC = Communicator(rank, size, comm, device)
     recorder = Recorder(rank, size, config, name, "ham10000")
+
+    # vary cost if non-uniform
+    if uniform_cost:
+        marginal_cost = marginal_cost
+    else:
+        marginal_cost = np.random.normal(marginal_cost, 0.1 * marginal_cost)
 
     # keep note of true and reported marginal costs
     recorder.save_costs(marginal_cost)
@@ -128,11 +135,10 @@ if __name__ == '__main__':
     num_train_data = df_train.shape[0]
 
     # ensure no leftover data before split
-    if np.sum(all_data) < num_train_data:
-        remainder = num_train_data - np.sum(all_data)
-        added_data, leftover = divmod(remainder, size)
-        all_data += added_data
-        all_data[0] += leftover
+    total_data = np.sum(all_data)
+    if total_data < num_train_data:
+        remainder = num_train_data - total_data
+        all_data = np.append(all_data, remainder)
 
     # create_directory_structure(df_train, os.path.join(data_dir, 'HAM_Loader_Train'))
     # create_directory_structure(df_test, os.path.join(data_dir, 'HAM_Loader_Test'))
@@ -209,11 +215,18 @@ if __name__ == '__main__':
     model.to(device)
 
     MPI.COMM_WORLD.Barrier()
+    uniform_fl = np.all(np.isclose(all_data[:size], num_data))
     if rank == 0:
         print('Beginning Federated Training...')
 
-    loss_fed = federated_training(model, FLC, train_loader, test_loader, device, loss_fn, optimizer, num_epochs,
-                                  log_frequency, recorder, None, local_steps=local_steps)
+    if uniform_fl:
+        loss_fed = federated_training(model, FLC, train_loader, test_loader, device, loss_fn, optimizer, num_epochs,
+                                      log_frequency, recorder, None, local_steps=local_steps)
+    else:
+        batches, remainder = divmod(num_data, batch_size)
+        steps_per_epoch = batches if remainder == 0 else batches + 1
+        nonuniform_federated_training(model, FLC, train_loader, test_loader, device, loss_fn, optimizer,
+                                      steps_per_epoch, num_epochs, log_frequency, recorder, None, local_steps=6)
 
     MPI.COMM_WORLD.Barrier()
 
