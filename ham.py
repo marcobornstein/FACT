@@ -232,8 +232,11 @@ if __name__ == '__main__':
     else:
         batches, remainder = divmod(num_data, batch_size)
         steps_per_epoch = batches if remainder == 0 else batches + 1
+        total_steps = np.empty(size, dtype=np.int32)
+        comm.Allgather(np.array([steps_per_epoch], dtype=np.int32), total_steps)
+        max_steps = np.max(total_steps)
         loss_fed = nonuniform_federated_training(model, FLC, train_loader, test_loader, device, loss_fn, optimizer,
-                                                 steps_per_epoch, num_epochs, log_frequency, recorder, None,
+                                                 max_steps, num_epochs, log_frequency, recorder, None,
                                                  local_steps=6)
 
     MPI.COMM_WORLD.Barrier()
