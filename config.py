@@ -52,6 +52,7 @@ configs = {
             'non_iid': False,
             'dirichlet_value': 0.3,
             'uniform_cost': False,
+            'robustness': {'use': True, 'irrational_agents': 5, 'fr_factor': 0.5},
             'data_path': '../../../../../cmlscratch/marcob/HAM10000',  # 'data/HAM10000',
             'name': 'fact-random-sandwich-uniform-cost-iid-run1'
         }

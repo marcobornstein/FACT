@@ -59,6 +59,7 @@ if __name__ == '__main__':
     marginal_cost = config['marginal_cost']
     local_steps = config['local_steps']
     uniform_cost = config['uniform_cost']
+    robustness = config['robustness']
 
     # initialize MPI
     comm = MPI.COMM_WORLD
@@ -102,6 +103,12 @@ if __name__ == '__main__':
     comm.Allgather(np.array([num_data], dtype=np.int32), all_data)
     self_weight = num_data / np.sum(all_data)
     FLC.self_weight = self_weight
+
+    # robustness testing
+    if robustness['use']:
+        num_irrational_agents = robustness['irrational_agents']
+        fr_factor = robustness['fr_factor']
+        all_data[-num_irrational_agents:] = (fr_factor * all_data[-num_irrational_agents:]).astype(np.int32)
 
     all_image_path = glob.glob(os.path.join(data_dir, 'HAM_10000_Images/', '*.jpg'))
     imageid_path_dict = {os.path.splitext(os.path.basename(x))[0]: x for x in all_image_path}
