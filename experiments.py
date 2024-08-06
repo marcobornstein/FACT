@@ -116,16 +116,16 @@ class Postprocessing:
             fbr = np.empty((num_agents, h))
             fl = np.empty(num_agents)
             for i in tqdm(range(num_agents)):
-                fl[i], fbr[i, :] = truthfulness_mechanism(mc, num_data, avg_agent_net[i], avg_other_agent_net[i],
+                fl[i], fbr[i, :] = truthfulness_mechanism(mc, num_data, avg_local_loss, avg_agent_net[i], avg_other_agent_net[i],
                                                           num_agents, h=h, normal=True, agents=2000, rounds=100000)
 
             avg_fbr = np.mean(fbr, axis=0) + penalty
 
             # plot truthfulness
-            plt.plot(epsilons, net_loss - avg_fbr, self.colors[0], label=label_add[v], linestyle=ls[v])
+            plt.plot(epsilons, avg_fbr, self.colors[0], label=label_add[v], linestyle=ls[v])
 
         plt.xlabel('Percent (%) Added/Subtracted from True Cost $c_i$', fontsize=20, weight='bold')
-        plt.ylabel('Net Improvement in Loss', fontsize=20, weight='bold')
+        plt.ylabel('Expected Improvement in Loss', fontsize=20, weight='bold')
 
         if dataset.lower() != 'ham':
             plt.legend(loc='upper left', fontsize=15)
@@ -182,7 +182,7 @@ class Postprocessing:
         fbr = np.empty((num_agents, h))
         fl = np.empty(num_agents)
         for i in tqdm(range(num_agents)):
-            fl[i], fbr[i, :] = truthfulness_mechanism(mc, num_data, avg_agent_net[i], avg_other_agent_net[i],
+            fl[i], fbr[i, :] = truthfulness_mechanism(mc, num_data, avg_local_loss, avg_agent_net[i], avg_other_agent_net[i],
                                                       num_agents, h=h, normal=True, agents=2000, rounds=100000)
 
         fact_loss = np.mean(fl) + penalty
@@ -191,9 +191,9 @@ class Postprocessing:
         # plot results
         plt.figure(figsize=(8, 6))
         plt.bar(["Local Training", 'FACT Training', 'Traditional FL'],
-                [avg_local_loss, fact_loss+avg_fed_loss, avg_fed_loss],
+                [avg_local_loss, fact_loss, avg_fed_loss],
                 color=['tab:red', 'tab:blue', 'tab:green'])
-        plt.ylabel('Loss', fontsize=25, weight='bold')
+        plt.ylabel('Expected Loss', fontsize=25, weight='bold')
         plt.xticks(fontsize=17, weight='bold')
         plt.yticks(fontsize=17, weight='bold')
         if dataset.lower() == 'cifar10':
@@ -246,6 +246,11 @@ class Postprocessing:
         elif loss and dataset.lower() == 'cifar10':
             plt.ylim([0, 1.25 * 10**2])
             plt.yscale("symlog")
+        elif not loss and dataset.lower() == 'cifar10':
+            plt.ylim([0.1, 0.8])
+        elif not loss and dataset.lower() == 'mnist':
+            plt.ylim([0.75, 1.])
+
         plt.xlim([1, epochs])
         plt.grid(alpha=0.25)
 
@@ -398,23 +403,31 @@ if __name__ == '__main__':
     pp = Postprocessing()
 
     # loss plots
-    pp.run_loss_plot(ham_random_path_iid, save_file='iid', runs=3, loss=False)
-    pp.run_loss_plot(ham_random_path_iid, save_file='iid', runs=3, loss=True)
+    ## pp.run_loss_plot(ham_random_path_iid, save_file='iid', runs=3, loss=False)
+    ## pp.run_loss_plot(ham_random_path_iid, save_file='iid', runs=3, loss=True)
 
-    # pp.run_loss_plot(cifar10_random_path_iid, save_file='iid', runs=3, loss=False)
+    # pp.run_loss_plot(mnist_random_path_iid, save_file='iid', runs=3, loss=False)
     # pp.run_loss_plot(cifar10_random_path_iid, save_file='iid', runs=3, loss=True)
-    # pp.run_loss_plot(cifar10_random_path_noniid6, save_file='noniid6', runs=3, loss=False)
+    # pp.run_loss_plot(mnist_random_path_noniid6, save_file='noniid6', runs=3, loss=False)
     # pp.run_loss_plot(cifar10_random_path_noniid6, save_file='noniid6', runs=3, loss=True)
-    # pp.run_loss_plot(cifar10_random_path_noniid3, save_file='noniid3', runs=3, loss=False)
+    # pp.run_loss_plot(mnist_random_path_noniid3, save_file='noniid3', runs=3, loss=False)
     # pp.run_loss_plot(cifar10_random_path_noniid3, save_file='noniid3', runs=3, loss=True)
 
-    # loss histogram and truthfulness plots
-    pp.run_loss_histogram(ham_random_path_iid, save_file='iid', runs=3)
-    # pp.run_loss_histogram(cifar10_random_path_noniid6, save_file='noniid6')
-    # pp.run_loss_histogram(cifar10_random_path_noniid3, save_file='noniid3')
+    # loss histogram
+    # pp.run_loss_histogram(ham_random_path_iid, save_file='iid', runs=3)
+
+    pp.run_loss_histogram(cifar10_random_path_iid, save_file='iid', runs=3)
+    pp.run_loss_histogram(cifar10_random_path_noniid6, save_file='noniid6')
+    pp.run_loss_histogram(cifar10_random_path_noniid3, save_file='noniid3')
+
+    pp.run_loss_histogram(mnist_random_path_iid, save_file='iid', runs=3)
+    pp.run_loss_histogram(mnist_random_path_noniid6, save_file='noniid6')
+    pp.run_loss_histogram(mnist_random_path_noniid3, save_file='noniid3')
 
     # penalty for using suboptimal data contributions
-    pp.penalty(ham_random_path_iid, save_file='penalty', offset=1)
+    ## pp.penalty(ham_random_path_iid, save_file='penalty', offset=1)
 
     # truthfulness plots
-    pp.truthfulness_plots([ham_random_path_iid], save_file='vary-dist', runs=3)
+    ## pp.truthfulness_plots([ham_random_path_iid], save_file='vary-dist', runs=3)
+    pp.truthfulness_plots(combined_cifar, save_file='vary-dist', runs=3)
+    pp.truthfulness_plots(combined_mnist, save_file='vary-dist', runs=3)

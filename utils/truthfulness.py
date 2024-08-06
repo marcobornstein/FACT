@@ -18,7 +18,7 @@ def sandwich_game(reported_cost, random_costs):
     return lower_boolean * upper_boolean, 3
 
 
-def truthfulness_mechanism(true_cost, num_data, agent_net_loss, other_agent_avg_net_loss, num_agents,
+def truthfulness_mechanism(true_cost, num_data, local_loss, agent_net_loss, other_agent_avg_net_loss, num_agents,
                            agents=1000, rounds=20000, h=81, normal=True):
 
     benefit_random = np.zeros(shape=(rounds, h))
@@ -33,7 +33,7 @@ def truthfulness_mechanism(true_cost, num_data, agent_net_loss, other_agent_avg_
     reported_costs = true_cost * (1 + epsilons)
 
     # benefit of lying about cost
-    data_cost_net = num_data * (true_cost - reported_costs)
+    # data_cost_net = num_data * (true_cost - reported_costs)
 
     # multiple rounds for random simulation
     for r in range(rounds):
@@ -46,15 +46,21 @@ def truthfulness_mechanism(true_cost, num_data, agent_net_loss, other_agent_avg_
         booleans_random, multiplier_random = sandwich_game(reported_costs, random_costs)
 
         # compute reward from FACT for given round
-        benefit_random[r, :] = data_cost_net + agent_net_loss - (multiplier_random * booleans_random * fact_reward)
+        # benefit_random[r, :] = data_cost_net + local_loss - (multiplier_random * booleans_random * fact_reward)  # this is what the device thinks
+        benefit_random[r, :] = 2 * booleans_random * fact_reward  # this is the expected improvement (thinks it wins 50% of time, so divide by three and multiple by 2)
 
     # find average benefit
     avg_benefit_random = np.mean(benefit_random, axis=0)
 
-    # determine average loss for FACT over the three randomly selected devices
+    # fact loss
+    fact_loss = local_loss - (other_agent_avg_net_loss * (num_agents - 1) / num_agents)
+
+    """
+    # determine average loss for FACT over the three randomly selected devices (what's the expected gain)
     three_agent_net_loss = agent_net_loss + 2 * other_agent_avg_net_loss
     three_agent_fact_rewards = fact_reward + 2 * ((other_agent_avg_net_loss * (num_agents - 2) / num_agents)
                                                   + agent_net_loss / num_agents)
     fact_loss = three_agent_net_loss - three_agent_fact_rewards
+    """
 
     return fact_loss, avg_benefit_random

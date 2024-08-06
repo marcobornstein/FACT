@@ -247,7 +247,7 @@ if __name__ == '__main__':
     net_losses = np.empty(size, dtype=np.float64)
     comm.Allgather(np.array([agent_net_loss], dtype=np.float64), net_losses)
     average_other_agent_loss = (np.sum(net_losses) - agent_net_loss) / (size - 1)
-    fact_loss, avg_benefit_random = truthfulness_mechanism(marginal_cost, num_data, agent_net_loss,
+    fact_loss, avg_benefit_random = truthfulness_mechanism(marginal_cost, num_data, loss_local, agent_net_loss,
                                                            average_other_agent_loss, size, agents=1000,
                                                            rounds=100000, h=81, normal=True)
     recorder.save_benefits(agent_net_loss, average_other_agent_loss, fact_loss, avg_benefit_random)
