@@ -1,0 +1,35 @@
+{
+  "title": "FACT or Fiction: Can Truthful Mechanisms Eliminate Federated Free Riding? (code)",
+  "upload_type": "software",
+  "description": "<p>Official code for FACT (Federated Agent Cost Truthfulness), the federated learning mechanism introduced in <em>FACT or Fiction: Can Truthful Mechanisms Eliminate Federated Free Riding?</em> (NeurIPS 2024). FACT eliminates free riding with a penalty, makes agents truthful about their costs through a sandwich competition, and is individually rational. Includes training code for CIFAR-10, MNIST and HAM10000, per-agent logs of every run in the paper, and scripts that regenerate all figures.</p>",
+  "creators": [
+    {"name": "Bornstein, Marco", "affiliation": "University of Maryland"},
+    {"name": "Bedi, Amrit Singh", "affiliation": "University of Central Florida"},
+    {"name": "Mohamed, Abdirisak", "affiliation": "University of Maryland; SAP Labs, LLC"},
+    {"name": "Huang, Furong", "affiliation": "University of Maryland"}
+  ],
+  "license": "mit",
+  "access_right": "open",
+  "keywords": [
+    "federated learning",
+    "mechanism design",
+    "free riding",
+    "truthfulness",
+    "incentives",
+    "NeurIPS 2024"
+  ],
+  "related_identifiers": [
+    {
+      "identifier": "10.52202/079017-2211",
+      "relation": "isSupplementTo",
+      "resource_type": "publication-conferencepaper",
+      "scheme": "doi"
+    },
+    {
+      "identifier": "arXiv:2405.13879",
+      "relation": "isSupplementTo",
+      "resource_type": "publication-preprint",
+      "scheme": "arxiv"
+    }
+  ]
+}
