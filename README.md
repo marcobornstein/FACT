@@ -1,5 +1,7 @@
 # FACT or Fiction: Can Truthful Mechanisms Eliminate Federated Free Riding?
 
+[![DOI](https://zenodo.org/badge/DOI/10.5281/zenodo.22773344.svg)](https://doi.org/10.5281/zenodo.22773344)
+
 **Marco Bornstein, Amrit Singh Bedi, Abdirisak Mohamed, Furong Huang** · NeurIPS 2024
 
 [Paper](https://proceedings.neurips.cc/paper_files/paper/2024/hash/803485352e61e3ebf41221e4776c9fd4-Abstract-Conference.html) ·
@@ -155,6 +157,19 @@ The suite runs in about a minute on a laptop and covers the following:
   pages     = {69206--69229},
   year      = {2024},
   doi       = {10.52202/079017-2211}
+}
+```
+
+To cite the code itself, use its Zenodo record:
+
+```bibtex
+@software{bornstein2024factcode,
+  title     = {{FACT} or Fiction: Can Truthful Mechanisms Eliminate Federated Free Riding? (code)},
+  author    = {Bornstein, Marco and Bedi, Amrit Singh and Mohamed, Abdirisak and Huang, Furong},
+  publisher = {Zenodo},
+  year      = {2026},
+  doi       = {10.5281/zenodo.22773344},
+  url       = {https://github.com/marcobornstein/FACT}
 }
 ```
 

@@ -4,6 +4,7 @@ title: "FACT or Fiction: Can Truthful Mechanisms Eliminate Federated Free Riding
 type: software
 license: MIT
 repository-code: "https://github.com/marcobornstein/FACT"
+doi: "10.5281/zenodo.22773344"
 authors:
   - family-names: Bornstein
     given-names: Marco
