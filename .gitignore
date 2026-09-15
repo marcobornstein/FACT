@@ -1,0 +1,17 @@
+__pycache__/
+*.py[cod]
+*.egg-info/
+.pytest_cache/
+.ruff_cache/
+.venv/
+.python-version
+.DS_Store
+.idea/
+.vscode/
+
+# Datasets and new results
+data/
+output-reproduced/
+figures-reproduced/
+output/FAKE/
+*.pth

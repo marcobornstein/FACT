@@ -1,0 +1,36 @@
+cff-version: 1.2.0
+message: "If you use this code, please cite the paper below."
+title: "FACT or Fiction: Can Truthful Mechanisms Eliminate Federated Free Riding?"
+type: software
+license: MIT
+repository-code: "https://github.com/marcobornstein/FACT"
+authors:
+  - family-names: Bornstein
+    given-names: Marco
+  - family-names: Bedi
+    given-names: Amrit Singh
+  - family-names: Mohamed
+    given-names: Abdirisak
+  - family-names: Huang
+    given-names: Furong
+preferred-citation:
+  type: conference-paper
+  title: "FACT or Fiction: Can Truthful Mechanisms Eliminate Federated Free Riding?"
+  authors:
+    - family-names: Bornstein
+      given-names: Marco
+    - family-names: Bedi
+      given-names: Amrit Singh
+    - family-names: Mohamed
+      given-names: Abdirisak
+    - family-names: Huang
+      given-names: Furong
+  collection-title: "Advances in Neural Information Processing Systems"
+  volume: 37
+  start: 69206
+  end: 69229
+  year: 2024
+  publisher:
+    name: "Curran Associates, Inc."
+  doi: "10.52202/079017-2211"
+  url: "https://proceedings.neurips.cc/paper_files/paper/2024/hash/803485352e61e3ebf41221e4776c9fd4-Abstract-Conference.html"
