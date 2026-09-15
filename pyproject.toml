@@ -1,0 +1,43 @@
+[build-system]
+requires = ["setuptools>=64"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "fact"
+version = "1.0.0"
+description = "FACT or Fiction: Can Truthful Mechanisms Eliminate Federated Free Riding? (NeurIPS 2024)"
+readme = "README.md"
+license = { file = "LICENSE" }
+authors = [
+    { name = "Marco Bornstein" },
+    { name = "Amrit Singh Bedi" },
+    { name = "Abdirisak Mohamed" },
+    { name = "Furong Huang" },
+]
+requires-python = ">=3.10"
+dependencies = [
+    "matplotlib>=3.8",
+    "mpi4py>=3.1",
+    "numpy>=1.26",
+    "torch>=2.3",
+    "torchvision>=0.18",
+]
+
+[project.optional-dependencies]
+ham = ["pandas>=2.0", "scikit-learn>=1.3"]
+dev = ["pytest>=8", "ruff>=0.5", "scipy>=1.11"]
+
+[project.urls]
+Paper = "https://proceedings.neurips.cc/paper_files/paper/2024/hash/803485352e61e3ebf41221e4776c9fd4-Abstract-Conference.html"
+arXiv = "https://arxiv.org/abs/2405.13879"
+OpenReview = "https://openreview.net/forum?id=JiRGxrqHh0"
+
+[tool.setuptools]
+packages = ["fact"]
+
+[tool.ruff]
+line-length = 120
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+pythonpath = ["."]
