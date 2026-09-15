@@ -36,7 +36,7 @@ def runs(tmp_path_factory):
     parsed = []
     for line in calls.read_text().splitlines():
         call = json.loads(line)
-        assert call[0] == "-n" and call[2:4] == ["python", "train.py"], call
+        assert call[0] == "-n" and call[2:4] == ["python", "scripts/train.py"], call
         args = train.parse_args(call[4:])
         assert args.output_dir == "stub-output"
         config = train.resolve_config(args)

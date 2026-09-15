@@ -24,7 +24,7 @@ def commands(script):
 
 
 def test_readme_commands_parse():
-    train_commands, plot_commands = list(commands("train.py")), list(commands("plot.py"))
+    train_commands, plot_commands = list(commands("scripts/train.py")), list(commands("scripts/plot.py"))
     assert train_commands and plot_commands
     for argv in train_commands:
         train.parse_args(argv)

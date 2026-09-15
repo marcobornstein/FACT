@@ -38,7 +38,7 @@ def test_fedavg(n):
 ])
 def test_train(tmp_path, n, flags):
     epochs = 2
-    mpirun(n, "train.py", "--dataset", "fake", "--device", "cpu", "--epochs", str(epochs), "--rounds", "1000",
+    mpirun(n, "scripts/train.py", "--dataset", "fake", "--device", "cpu", "--epochs", str(epochs), "--rounds", "1000",
            "--data-dir", str(tmp_path / "data"), "--output-dir", str(tmp_path), *flags)
 
     folder = tmp_path / "FAKE" / f"fact-fake-{n}devices"

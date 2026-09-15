@@ -21,7 +21,7 @@ Empirically, FACT prevents free riding when agents can lie about their costs and
 
 ## How the code maps to the paper
 
-Every agent is one MPI process. A run of [`train.py`](train.py) goes through the steps below.
+Every agent is one MPI process. A run of [`scripts/train.py`](scripts/train.py) goes through the steps below.
 
 1. Each agent computes its locally optimal contribution m\* = sqrt(γσ²L / 2c) from its marginal cost c (Theorem 1). The agents then split the training set into disjoint shards of those sizes.
 2. Each agent **trains locally** on its shard.
@@ -32,12 +32,12 @@ Every agent is one MPI process. A run of [`train.py`](train.py) goes through the
 | --- | --- |
 | [`fact/mechanism.py`](fact/mechanism.py) | Optimal contribution, penalty λ and P_fr (Eqs. 4, 21), FACT loss, truthfulness simulation |
 | [`fact/comm.py`](fact/comm.py) | Weighted FedAvg over MPI |
-| [`fact/training.py`](fact/training.py) | Local and federated training loops |
+| [`fact/engine.py`](fact/engine.py) | Local and federated training loops |
 | [`fact/data.py`](fact/data.py) | CIFAR-10, MNIST, HAM10000; iid and Dirichlet non-iid splits |
 | [`fact/models.py`](fact/models.py) | ResNet18, the MNIST CNN, pretrained ResNet50 |
 | [`fact/config.py`](fact/config.py) | Per-dataset hyperparameters |
-| [`train.py`](train.py) | Runs one experiment |
-| [`plot.py`](plot.py) | Regenerates every figure from the logs in `output/` |
+| [`scripts/train.py`](scripts/train.py) | Runs one experiment |
+| [`scripts/plot.py`](scripts/plot.py) | Regenerates every figure from the logs in `output/` |
 | [`scripts/reproduce_paper.sh`](scripts/reproduce_paper.sh) | The command for every committed run |
 | [`scripts/prepare_ham10000.py`](scripts/prepare_ham10000.py) | Builds the HAM10000 train/test folders |
 | [`output/`](output) | Per-agent logs of every run in the paper |
@@ -60,15 +60,15 @@ Tested with Python 3.12, PyTorch 2.4, torchvision 0.19, NumPy 2.0, mpi4py 4.0 an
 A smoke test on tiny random data with two agents takes a few seconds on a laptop:
 
 ```bash
-mpirun -n 2 python train.py --dataset fake --epochs 1 --device cpu
+mpirun -n 2 python scripts/train.py --dataset fake --epochs 1 --device cpu
 ```
 
 Experiments from the paper:
 
 ```bash
-mpirun -n 16 python train.py --dataset cifar10 --seed 1
-mpirun -n 16 python train.py --dataset mnist --non-iid 0.3 --seed 4
-mpirun -n 10 python train.py --dataset ham10000 --nonuniform-cost --batch-size 64 --free-riders 4
+mpirun -n 16 python scripts/train.py --dataset cifar10 --seed 1
+mpirun -n 16 python scripts/train.py --dataset mnist --non-iid 0.3 --seed 4
+mpirun -n 10 python scripts/train.py --dataset ham10000 --nonuniform-cost --batch-size 64 --free-riders 4
 ```
 
 CIFAR-10 and MNIST download to `data/` automatically. HAM10000 has to be downloaded by hand from [Kaggle](https://www.kaggle.com/datasets/kmader/skin-cancer-mnist-ham10000) or [Harvard Dataverse](https://doi.org/10.7910/DVN/DBW86T), then prepared:
@@ -77,7 +77,7 @@ CIFAR-10 and MNIST download to `data/` automatically. HAM10000 has to be downloa
 python scripts/prepare_ham10000.py --source ~/Downloads/ham10000 --dest data/HAM10000
 ```
 
-`--device auto`, the default, uses CUDA, then Apple MPS, then CPU. With several GPUs, agents are assigned to them round-robin. Run `python train.py --help` to see all options.
+`--device auto`, the default, uses CUDA, then Apple MPS, then CPU. With several GPUs, agents are assigned to them round-robin. Run `python scripts/train.py --help` to see all options.
 
 Results go to `output/<DATASET>/<name>-<dataset>-<agents>devices/`. An existing folder is never overwritten; a timestamp is appended instead. Each agent `i` writes these files:
 
@@ -107,8 +107,8 @@ Non-iid splits use Dirichlet label skew with α = 0.6 or 0.3 ([Gao et al., 2022]
 The logs of every run in the paper are committed in [`output/`](output). Every figure regenerates from them in seconds, with no GPU:
 
 ```bash
-python plot.py
-python plot.py --only truthful histogram
+python scripts/plot.py
+python scripts/plot.py --only truthful histogram
 ```
 
 | Paper | Figure files | Runs in `output/` |
@@ -126,7 +126,7 @@ python plot.py --only truthful histogram
 
 ```bash
 bash scripts/reproduce_paper.sh
-python plot.py --results-dir output-reproduced --figures-dir figures-reproduced
+python scripts/plot.py --results-dir output-reproduced --figures-dir figures-reproduced
 ```
 
 The test suite checks that each command recreates the configuration recorded in that run's `ExpDescription`. Expect statistical rather than bitwise agreement, since GPU kernels are nondeterministic.
@@ -142,7 +142,7 @@ The suite runs in about a minute on a laptop and covers the following:
 - **Data.** Shards are disjoint, deterministic and correctly sized, including when they use the entire dataset, and Dirichlet splits are label-skewed.
 - **MPI.** FedAvg and broadcast are checked at 1, 3 and 4 processes. End-to-end training runs with 1, 2 and 3 agents, including free riders with uneven step counts and non-iid data.
 - **Provenance.** `scripts/reproduce_paper.sh` is run with a stub `mpirun`. Every command must match its run's recorded configuration, and the non-uniform costs must follow from the seeds.
-- **Figures and README.** `plot.py` regenerates exactly the committed set of figures, and this README's commands and hyperparameter table are checked against the code.
+- **Figures and README.** `scripts/plot.py` regenerates exactly the committed set of figures, and this README's commands and hyperparameter table are checked against the code.
 
 ## Citation
 

@@ -37,7 +37,8 @@ packages = ["fact"]
 
 [tool.ruff]
 line-length = 120
+src = [".", "scripts"]
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]
-pythonpath = ["."]
+pythonpath = [".", "scripts"]

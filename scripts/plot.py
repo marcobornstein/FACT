@@ -1,7 +1,7 @@
 """Regenerate the figures from the per-agent logs in output/.
 
-    python plot.py                        # every figure
-    python plot.py --only truthful loss   # selected families
+    python scripts/plot.py                        # every figure
+    python scripts/plot.py --only truthful loss   # selected families
 """
 
 import argparse

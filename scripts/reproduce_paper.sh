@@ -2,8 +2,8 @@
 # Rerun every experiment whose logs are committed in output/.
 #
 # Results go to $OUT (default: output-reproduced) so the committed logs stay untouched; plot them with
-#   python plot.py --results-dir output-reproduced --figures-dir figures-reproduced
-# Set MPIRUN to use a different launcher, called as: $MPIRUN -n <agents> python train.py ...
+#   python scripts/plot.py --results-dir output-reproduced --figures-dir figures-reproduced
+# Set MPIRUN to use a different launcher, called as: $MPIRUN -n <agents> python scripts/train.py ...
 set -euo pipefail
 cd "$(dirname "$0")/.."
 
@@ -13,7 +13,7 @@ MPIRUN=${MPIRUN:-mpirun}
 run() {
     local agents=$1
     shift
-    "$MPIRUN" -n "$agents" python train.py --output-dir "$OUT" "$@"
+    "$MPIRUN" -n "$agents" python scripts/train.py --output-dir "$OUT" "$@"
 }
 
 # CIFAR-10 and MNIST (Figures 1-3, 5, 6). Run r of the iid setting used seed r; runs 1, 2, 3 of the

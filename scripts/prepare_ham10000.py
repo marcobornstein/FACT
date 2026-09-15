@@ -1,4 +1,4 @@
-"""Arrange HAM10000 into the train/test image folders read by train.py.
+"""Arrange HAM10000 into the train/test image folders read by scripts/train.py.
 
 Download HAM10000 (e.g. https://www.kaggle.com/datasets/kmader/skin-cancer-mnist-ham10000 or
 https://doi.org/10.7910/DVN/DBW86T) and point --source at the folder holding HAM10000_metadata.csv

@@ -1,8 +1,8 @@
 """Train agents locally and federatedly, then evaluate the FACT mechanism. One MPI process per agent.
 
-    mpirun -n 16 python train.py --dataset cifar10
-    mpirun -n 16 python train.py --dataset mnist --non-iid 0.3 --seed 2
-    mpirun -n 10 python train.py --dataset ham10000 --nonuniform-cost --free-riders 4
+    mpirun -n 16 python scripts/train.py --dataset cifar10
+    mpirun -n 16 python scripts/train.py --dataset mnist --non-iid 0.3 --seed 2
+    mpirun -n 10 python scripts/train.py --dataset ham10000 --nonuniform-cost --free-riders 4
 """
 
 import argparse
@@ -17,10 +17,10 @@ from mpi4py import MPI
 from fact.comm import FedAvg
 from fact.config import DATASETS
 from fact.data import agent_loaders, class_weights, load_datasets, partition
+from fact.engine import train
 from fact.mechanism import expected_truthfulness_benefit, fact_loss, optimal_contribution
 from fact.models import build_model
 from fact.recorder import Recorder, create_run_folder
-from fact.training import train
 
 
 def parse_args(argv=None):
